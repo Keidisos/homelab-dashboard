@@ -8,21 +8,34 @@ A modern, self-hosted dashboard for monitoring your homelab services. Built with
 
 ## Features
 
-- **Proxmox VE** - Monitor nodes, VMs, and LXC containers
-- **Docker/Portainer** - View all running containers
+- **Proxmox VE** - Monitor nodes, VMs, and LXC containers with real-time CPU/RAM graphs
+- **Docker/Portainer** - View all running containers with quick access links
 - **Jellyfin** - Active streams monitoring
 - **Jellyseerr** - Recent media requests with posters
 - **qBittorrent** - Active downloads with progress
-- **Pterodactyl** - Game servers status
+- **Pterodactyl** - Game servers status with resource usage
+- **Settings Page** - Configure all application URLs from the UI
 - **Quick Bookmarks** - Fast access to all your services
+
+## Screenshots
+
+### Dashboard
+Modern glassmorphism design with real-time stats and quick access links.
+
+### Docker Containers
+Scrollable list with status indicators and direct links to web interfaces.
+
+### Game Servers
+Pterodactyl integration showing server status, CPU and memory usage.
 
 ## Tech Stack
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS + Glassmorphism design
+- **Styling**: Tailwind CSS v4 + Glassmorphism design
 - **UI Components**: shadcn/ui
 - **Data Fetching**: TanStack Query (React Query)
+- **Charts**: Recharts
 - **Icons**: Lucide React
 
 ## Quick Start with Docker
@@ -40,7 +53,7 @@ cd homelab-dashboard
 cp .env.example .env
 ```
 
-Edit `.env` with your service credentials.
+Edit `.env` with your API credentials. **Note:** Application URLs are configured via the Settings page in the dashboard.
 
 ### 3. Build and run
 
@@ -52,12 +65,18 @@ docker-compose up -d --build
 
 Open `http://your-server:3000` in your browser.
 
+### 5. Configure URLs
+
+Navigate to **Settings** (bottom-left of the sidebar) to configure your application URLs.
+
 ## Environment Variables
+
+Only API credentials need to be set in `.env`. Application URLs are managed via the Settings page.
 
 | Variable | Description |
 |----------|-------------|
 | `PROXMOX_HOST` | Proxmox VE URL (https://ip:8006) |
-| `PROXMOX_TOKEN_ID` | API Token ID (user@pam!tokenname) |
+| `PROXMOX_TOKEN_ID` | API Token ID (user@pve!tokenname) |
 | `PROXMOX_TOKEN_SECRET` | API Token Secret |
 | `PORTAINER_HOST` | Portainer URL |
 | `PORTAINER_API_KEY` | Portainer API Key |
@@ -71,13 +90,9 @@ Open `http://your-server:3000` in your browser.
 | `PTERODACTYL_HOST` | Pterodactyl panel URL |
 | `PTERODACTYL_API_KEY` | Pterodactyl API Key |
 
-See `.env.example` for the complete list including public URLs for bookmarks.
-
 ## API Configuration
 
 ### Proxmox VE
-
-Steps to retrieve the API credentials:
 
 1. Navigate to the Proxmox portal, click on **Datacenter**
 2. Expand **Permissions**, click on **Groups**
@@ -88,7 +103,7 @@ Steps to retrieve the API credentials:
    - Path: `/`
    - Group: group from Step 4
    - Role: `PVEAuditor`
-   - Propagate: ✅ Checked
+   - Propagate: Checked
 7. Expand **Permissions**, click on **Users**
 8. Click the **Add** button
    - User name: something informative like `api`
@@ -99,14 +114,14 @@ Steps to retrieve the API credentials:
 10. Click the **Add** button
     - User: user from Step 8
     - Token ID: something informative like `dashboard`
-    - Privilege Separation: ❌ **Unchecked**
+    - Privilege Separation: **Unchecked**
 11. **Copy the Secret** shown - it is only displayed once!
 12. Go back to the **Permissions** menu
 13. Click **Add** -> **API Token Permission**
     - Path: `/`
     - API Token: select the API token created in Step 10
     - Role: `PVEAuditor`
-    - Propagate: ✅ Checked
+    - Propagate: Checked
 
 Your environment variables will look like:
 ```
@@ -213,6 +228,27 @@ npm run dev
 
 # Build for production
 npm run build
+```
+
+## Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── api/               # API routes for each service
+│   ├── docker/            # Docker containers page
+│   ├── gaming/            # Pterodactyl game servers page
+│   ├── jellyfin/          # Media center page
+│   ├── proxmox/           # Proxmox VE page
+│   └── settings/          # Settings page for URL configuration
+├── components/            # React components
+│   ├── layout/           # Layout components (Sidebar)
+│   └── ui/               # shadcn/ui components
+├── hooks/                 # Custom React hooks
+│   ├── use-services.ts   # Service data fetching hooks
+│   └── use-settings.ts   # Settings/URLs hook
+├── lib/                   # Utility functions
+└── types/                 # TypeScript type definitions
 ```
 
 ## License

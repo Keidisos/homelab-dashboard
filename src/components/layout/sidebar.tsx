@@ -37,6 +37,8 @@ const navItems: NavItem[] = [
   { name: 'Gaming', href: '/gaming', icon: Gamepad2, color: 'text-green-400' },
 ];
 
+const settingsItem: NavItem = { name: 'Settings', href: '/settings', icon: Settings, color: 'text-slate-400' };
+
 interface SidebarProps {
   className?: string;
 }
@@ -124,27 +126,43 @@ export function Sidebar({ className }: SidebarProps) {
 
         {/* Bottom section */}
         <div className="p-2 border-t border-slate-800/50 space-y-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
+          {/* Settings button */}
+          {(() => {
+            const Icon = settingsItem.icon;
+            const button = (
               <Button
                 variant="ghost"
+                asChild
                 className={cn(
                   'w-full justify-start gap-3',
                   'text-slate-400 hover:text-slate-100',
                   'hover:bg-slate-800/50',
+                  'transition-all duration-200',
                   collapsed && 'justify-center px-2'
                 )}
               >
-                <Settings className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>Settings</span>}
+                <Link href={settingsItem.href}>
+                  <Icon className={cn('h-5 w-5 shrink-0', settingsItem.color)} />
+                  {!collapsed && (
+                    <span className="truncate">{settingsItem.name}</span>
+                  )}
+                </Link>
               </Button>
-            </TooltipTrigger>
-            {collapsed && (
-              <TooltipContent side="right" className="bg-slate-800 border-slate-700">
-                Settings
-              </TooltipContent>
-            )}
-          </Tooltip>
+            );
+
+            if (collapsed) {
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>{button}</TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-slate-700">
+                    {settingsItem.name}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return button;
+          })()}
 
           {/* Collapse toggle */}
           <Button

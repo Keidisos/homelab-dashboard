@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { ApiResponse, ProxmoxData, DockerContainer, JellyfinData, PterodactylData, StorageData, JellyseerrData, QBittorrentData, DashdotData } from '@/types';
+import type { ApiResponse, ProxmoxData, DockerContainer, JellyfinData, PterodactylData, StorageData, JellyseerrData, QBittorrentData } from '@/types';
 import { config } from '@/config/dashboard';
 
 // ============================================
@@ -106,20 +106,5 @@ export function useQBittorrent() {
       return response.json();
     },
     refetchInterval: config.polling.docker, // Use same polling as Docker
-  });
-}
-
-// ============================================
-// DASHDOT HOOK
-// ============================================
-export function useDashdot() {
-  return useQuery<ApiResponse<DashdotData>>({
-    queryKey: ['dashdot'],
-    queryFn: async () => {
-      const response = await fetch('/api/dashdot');
-      if (!response.ok) throw new Error('Failed to fetch Dashdot data');
-      return response.json();
-    },
-    refetchInterval: 5000, // Poll every 5 seconds for real-time graphs
   });
 }

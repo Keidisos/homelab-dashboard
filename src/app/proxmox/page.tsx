@@ -1,23 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Thermometer, Activity } from 'lucide-react';
+import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useProxmox, useDashdot } from '@/hooks/use-services';
+import { useProxmox } from '@/hooks/use-services';
 import { cn } from '@/lib/utils';
 import type { ProxmoxNode, ProxmoxVM } from '@/types';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
   ResponsiveContainer,
-  Tooltip,
   Area,
   AreaChart,
+  YAxis,
 } from 'recharts';
 
 const MAX_HISTORY_POINTS = 30;
@@ -269,8 +265,8 @@ function VMListItem({ vm }: { vm: ProxmoxVM }) {
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[...Array(3)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[...Array(2)].map((_, i) => (
           <Card key={i} className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
             <CardContent className="p-4">
               <Skeleton className="h-8 w-24 bg-slate-800 mb-3" />
@@ -285,11 +281,9 @@ function LoadingSkeleton() {
 
 export default function ProxmoxPage() {
   const { data: proxmoxData, isLoading: proxmoxLoading, error: proxmoxError } = useProxmox();
-  const { data: dashdotData } = useDashdot();
 
   const [cpuHistory, setCpuHistory] = useState<Array<{ value: number; time: number }>>([]);
   const [ramHistory, setRamHistory] = useState<Array<{ value: number; time: number }>>([]);
-  const [tempHistory, setTempHistory] = useState<Array<{ value: number; time: number }>>([]);
 
   // Update history when new data arrives
   useEffect(() => {
@@ -311,21 +305,10 @@ export default function ProxmoxPage() {
     }
   }, [proxmoxData]);
 
-  useEffect(() => {
-    if (dashdotData?.data?.temps?.cpu) {
-      const now = Date.now();
-      setTempHistory(prev => {
-        const newHistory = [...prev, { value: dashdotData.data!.temps.cpu, time: now }];
-        return newHistory.slice(-MAX_HISTORY_POINTS);
-      });
-    }
-  }, [dashdotData]);
-
   const currentCpu = proxmoxData?.data?.nodes?.[0]?.cpu ? proxmoxData.data.nodes[0].cpu * 100 : 0;
   const currentRam = proxmoxData?.data?.nodes?.[0]
     ? (proxmoxData.data.nodes[0].mem / proxmoxData.data.nodes[0].maxmem) * 100
     : 0;
-  const currentTemp = dashdotData?.data?.temps?.cpu || 0;
 
   const vms = proxmoxData?.data?.vms || [];
   const runningVms = vms.filter(vm => vm.status === 'running' && vm.type === 'qemu');
@@ -364,45 +347,31 @@ export default function ProxmoxPage() {
 
         {proxmoxData?.success && proxmoxData.data && (
           <>
-            {/* Stats Cards with Graphs */}
-            <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <StatCard
-                title="CPU"
-                value={currentCpu}
-                unit="%"
-                icon={Cpu}
-                color="orange"
-                history={cpuHistory}
-              />
-              <StatCard
-                title="RAM"
-                value={currentRam}
-                unit="%"
-                icon={MemoryStick}
-                color="blue"
-                history={ramHistory}
-              />
-              <StatCard
-                title="Temperature"
-                value={currentTemp}
-                unit="°C"
-                icon={Thermometer}
-                color={currentTemp > 70 ? 'red' : 'emerald'}
-                history={tempHistory}
-                maxValue={100}
-              />
-            </section>
+            {/* Node Card with Stats Graphs side by side */}
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Node Card - Left side */}
+              {proxmoxData.data.nodes.map((node) => (
+                <NodeCard key={node.node} node={node} />
+              ))}
 
-            {/* Node Info */}
-            <section className="space-y-4">
-              <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <Server className="h-4 w-4 text-orange-400" />
-                Nodes ({proxmoxData.data.nodes.length})
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {proxmoxData.data.nodes.map((node) => (
-                  <NodeCard key={node.node} node={node} />
-                ))}
+              {/* Stats Cards stacked - Right side */}
+              <div className="flex flex-col gap-4">
+                <StatCard
+                  title="CPU"
+                  value={currentCpu}
+                  unit="%"
+                  icon={Cpu}
+                  color="orange"
+                  history={cpuHistory}
+                />
+                <StatCard
+                  title="RAM"
+                  value={currentRam}
+                  unit="%"
+                  icon={MemoryStick}
+                  color="blue"
+                  history={ramHistory}
+                />
               </div>
             </section>
 

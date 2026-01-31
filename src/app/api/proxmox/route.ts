@@ -22,6 +22,8 @@ async function proxmoxFetch<T>(endpoint: string): Promise<T> {
   });
 
   if (!response.ok) {
+    const errorText = await response.text().catch(() => 'No response body');
+    console.error(`Proxmox API failed: ${response.status} ${response.statusText}`, errorText);
     throw new Error(`Proxmox API error: ${response.status} ${response.statusText}`);
   }
 

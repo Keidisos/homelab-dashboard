@@ -34,6 +34,8 @@ export interface ProxmoxNode {
   maxcpu: number;
   mem: number;
   maxmem: number;
+  disk?: number;
+  maxdisk?: number;
   uptime: number;
 }
 
@@ -190,48 +192,6 @@ export interface QBittorrentTorrent {
 
 export interface QBittorrentData {
   torrents: QBittorrentTorrent[];
-}
-
-// ============================================
-// DASHDOT TYPES
-// ============================================
-export interface DashdotData {
-  cpu: {
-    brand: string;
-    model: string;
-    cores: number;
-    threads: number;
-    frequency: number;
-  };
-  ram: {
-    total: number;
-    used: number;
-  };
-  storage: {
-    total: number;
-    used: number;
-  };
-  network: {
-    speedUp: number;
-    speedDown: number;
-  };
-  gpu?: {
-    brand: string;
-    model: string;
-  };
-  os: {
-    platform: string;
-    distro: string;
-    release: string;
-    uptime: number;
-  };
-  temps: {
-    cpu: number;
-    gpu?: number;
-  };
-  cpuHistory: number[];
-  ramHistory: number[];
-  tempHistory: number[];
 }
 
 // ============================================
