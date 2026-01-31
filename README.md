@@ -73,6 +73,48 @@ Open `http://your-server:3000` in your browser.
 
 See `.env.example` for the complete list including public URLs for bookmarks.
 
+## API Configuration
+
+### Proxmox VE
+
+Steps to retrieve the API credentials:
+
+1. Navigate to the Proxmox portal, click on **Datacenter**
+2. Expand **Permissions**, click on **Groups**
+3. Click the **Create** button
+4. Name the group something informative, like `api-users`
+5. Click on the **Permissions** "folder"
+6. Click **Add** -> **Group Permission**
+   - Path: `/`
+   - Group: group from Step 4
+   - Role: `PVEAuditor`
+   - Propagate: ✅ Checked
+7. Expand **Permissions**, click on **Users**
+8. Click the **Add** button
+   - User name: something informative like `api`
+   - Realm: `Proxmox VE authentication server`
+   - Password: create a secure password
+   - Group: group from Step 4
+9. Expand **Permissions**, click on **API Tokens**
+10. Click the **Add** button
+    - User: user from Step 8
+    - Token ID: something informative like `dashboard`
+    - Privilege Separation: ❌ **Unchecked**
+11. **Copy the Secret** shown - it is only displayed once!
+12. Go back to the **Permissions** menu
+13. Click **Add** -> **API Token Permission**
+    - Path: `/`
+    - API Token: select the API token created in Step 10
+    - Role: `PVEAuditor`
+    - Propagate: ✅ Checked
+
+Your environment variables will look like:
+```
+PROXMOX_HOST=https://192.168.1.100:8006
+PROXMOX_TOKEN_ID=api@pve!dashboard
+PROXMOX_TOKEN_SECRET=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
 ## Development
 
 ```bash
