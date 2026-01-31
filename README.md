@@ -115,6 +115,93 @@ PROXMOX_TOKEN_ID=api@pve!dashboard
 PROXMOX_TOKEN_SECRET=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
+### Portainer
+
+1. Log in to your Portainer instance
+2. Click on your username in the top-right corner
+3. Select **My Account**
+4. Scroll down to **Access Tokens**
+5. Click **Add access token**
+6. Enter a description (e.g., `homelab-dashboard`)
+7. Click **Create access token**
+8. **Copy the token** - it is only displayed once!
+
+```
+PORTAINER_HOST=https://192.168.1.100:9443
+PORTAINER_API_KEY=ptr_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+### Jellyfin
+
+1. Log in to your Jellyfin server as an administrator
+2. Go to **Dashboard** (Admin menu)
+3. Navigate to **API Keys** (under Advanced)
+4. Click the **+** button to create a new API key
+5. Enter an app name (e.g., `homelab-dashboard`)
+6. Click **OK**
+7. Copy the generated API key
+
+```
+JELLYFIN_HOST=http://192.168.1.100:8096
+JELLYFIN_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+### Jellyseerr
+
+1. Log in to your Jellyseerr instance as an administrator
+2. Go to **Settings** (gear icon)
+3. Navigate to **General** settings
+4. Scroll down to find the **API Key** section
+5. Copy the API key (or generate a new one)
+
+```
+JELLYSEERR_HOST=http://192.168.1.100:5055
+JELLYSEERR_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+### qBittorrent
+
+qBittorrent uses username/password authentication for its Web UI:
+
+1. Open qBittorrent Web UI
+2. Go to **Tools** -> **Options** (or **Preferences**)
+3. Navigate to **Web UI** tab
+4. Note your username and password
+5. Make sure **Bypass authentication for clients on localhost** is disabled if accessing remotely
+
+```
+QBITTORRENT_HOST=http://192.168.1.100:8080
+QBITTORRENT_USERNAME=admin
+QBITTORRENT_PASSWORD=your-password
+```
+
+### Pterodactyl
+
+You can use either a **Client API Key** or an **Application API Key**:
+
+#### Option 1: Client API Key (Recommended)
+1. Log in to your Pterodactyl panel
+2. Click on your username in the top-right corner
+3. Go to **API Credentials**
+4. Click **Create API Key**
+5. Enter a description and optionally restrict allowed IPs
+6. Click **Create**
+7. Copy the API key (starts with `ptlc_`)
+
+#### Option 2: Application API Key (Admin only)
+1. Log in to the Pterodactyl admin area
+2. Go to **Application API** (under Configuration)
+3. Click **Create New**
+4. Enter a description
+5. Set permissions (at minimum: Servers - Read)
+6. Click **Create Credentials**
+7. Copy the API key (starts with `ptla_`)
+
+```
+PTERODACTYL_HOST=https://panel.example.com
+PTERODACTYL_API_KEY=ptlc_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
 ## Development
 
 ```bash
