@@ -23,79 +23,76 @@ import {
   Clock,
   ArrowUpRight,
   Zap,
+  Home,
+  Cloud,
+  Wifi,
+  Shield,
+  Settings,
+  Globe,
+  Mail,
+  Music,
+  Camera,
+  Folder,
+  Terminal,
+  Code,
+  BookOpen,
+  MessageSquare,
+  Bell,
+  Calendar,
+  Image,
+  Link,
+  Star,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useProxmox, useDocker, useJellyfin, usePterodactyl } from '@/hooks/use-services';
-import { useAppUrls } from '@/hooks/use-settings';
+import { useQuickLinks } from '@/hooks/use-settings';
 import type { LucideIcon } from 'lucide-react';
-import type { AppUrls } from '@/hooks/use-settings';
+import type { QuickLink } from '@/hooks/use-settings';
 
-interface QuickLink {
-  name: string;
-  urlKey: keyof AppUrls;
-  icon: LucideIcon;
-  color: string;
-}
-
-const quickLinksConfig: QuickLink[] = [
-  {
-    name: 'Proxmox',
-    urlKey: 'proxmox',
-    icon: Server,
-    color: 'from-orange-500 to-amber-500',
-  },
-  {
-    name: 'Portainer',
-    urlKey: 'portainer',
-    icon: Container,
-    color: 'from-blue-500 to-cyan-500',
-  },
-  {
-    name: 'Jellyfin',
-    urlKey: 'jellyfin',
-    icon: Tv,
-    color: 'from-purple-500 to-pink-500',
-  },
-  {
-    name: 'Jellyseerr',
-    urlKey: 'jellyseerr',
-    icon: Search,
-    color: 'from-indigo-500 to-purple-500',
-  },
-  {
-    name: 'Radarr',
-    urlKey: 'radarr',
-    icon: Film,
-    color: 'from-amber-500 to-orange-500',
-  },
-  {
-    name: 'Sonarr',
-    urlKey: 'sonarr',
-    icon: Tv2,
-    color: 'from-cyan-500 to-blue-500',
-  },
-  {
-    name: 'qBittorrent',
-    urlKey: 'qbittorrent',
-    icon: Download,
-    color: 'from-green-500 to-emerald-500',
-  },
-  {
-    name: 'Pterodactyl',
-    urlKey: 'pterodactyl',
-    icon: Gamepad2,
-    color: 'from-emerald-500 to-teal-500',
-  },
-  {
-    name: 'NAS',
-    urlKey: 'nas',
-    icon: Database,
-    color: 'from-teal-500 to-cyan-500',
-  },
-];
+// Icon mapping for dynamic icons
+const iconMap: Record<string, LucideIcon> = {
+  Server,
+  Container,
+  Tv,
+  Gamepad2,
+  HardDrive,
+  Film,
+  Tv2,
+  Download,
+  Search,
+  Database,
+  Home,
+  Cloud,
+  Wifi,
+  Shield,
+  Settings,
+  Globe,
+  Mail,
+  Music,
+  Camera,
+  Folder,
+  Terminal,
+  Code,
+  BookOpen,
+  MessageSquare,
+  Bell,
+  Calendar,
+  Image,
+  Link,
+  Star,
+  Monitor,
+  Users,
+  Play,
+  Box,
+  Activity,
+  Cpu,
+  MemoryStick,
+  Clock,
+  Zap,
+};
 
 function formatBytes(bytes: number): string {
   const gb = bytes / (1024 * 1024 * 1024);
@@ -156,12 +153,14 @@ function StatCard({
   );
 }
 
-function QuickLinkCard({ link, url }: { link: QuickLink; url: string }) {
-  const Icon = link.icon;
+function QuickLinkCard({ link }: { link: QuickLink }) {
+  const Icon = iconMap[link.icon] || Server;
+
+  if (!link.url) return null;
 
   return (
     <a
-      href={url || '#'}
+      href={link.url}
       target="_blank"
       rel="noopener noreferrer"
       className="group"
@@ -360,7 +359,7 @@ function CurrentTime() {
 export default function DashboardPage() {
   const { data: proxmoxData } = useProxmox();
   const { data: dockerData } = useDocker();
-  const urls = useAppUrls();
+  const quickLinks = useQuickLinks();
 
   const node = proxmoxData?.data?.nodes?.[0];
   const totalRam = node ? node.maxmem : 0;
@@ -445,10 +444,15 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-3">
-                {quickLinksConfig.map((link) => (
-                  <QuickLinkCard key={link.name} link={link} url={urls?.[link.urlKey] || '#'} />
+                {quickLinks.filter(link => link.url).map((link) => (
+                  <QuickLinkCard key={link.id} link={link} />
                 ))}
               </div>
+              {quickLinks.filter(link => link.url).length === 0 && (
+                <p className="text-sm text-slate-500 text-center py-4">
+                  Configure quick links in Settings
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>

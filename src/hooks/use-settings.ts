@@ -20,10 +20,19 @@ export interface AppUrls {
   nas: string;
 }
 
+export interface QuickLink {
+  id: string;
+  name: string;
+  url: string;
+  icon: string;
+  color: string;
+}
+
 interface SettingsResponse {
   success: boolean;
   data?: {
     urls: AppUrls;
+    quickLinks: QuickLink[];
   };
   error?: string;
 }
@@ -44,4 +53,9 @@ export function useSettings() {
 export function useAppUrls(): AppUrls | null {
   const { data } = useSettings();
   return data?.data?.urls || null;
+}
+
+export function useQuickLinks(): QuickLink[] {
+  const { data } = useSettings();
+  return data?.data?.quickLinks || [];
 }
