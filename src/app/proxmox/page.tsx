@@ -1,13 +1,26 @@
 'use client';
 
-import { Server, Cpu, MemoryStick, Clock, Box, Monitor } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Thermometer, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useProxmox } from '@/hooks/use-services';
+import { useProxmox, useDashdot } from '@/hooks/use-services';
 import { cn } from '@/lib/utils';
 import type { ProxmoxNode, ProxmoxVM } from '@/types';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip,
+  Area,
+  AreaChart,
+} from 'recharts';
+
+const MAX_HISTORY_POINTS = 30;
 
 function formatBytes(bytes: number): string {
   const gb = bytes / (1024 * 1024 * 1024);
@@ -23,6 +36,97 @@ function formatUptime(seconds: number): string {
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;
+}
+
+function MiniChart({
+  data,
+  dataKey,
+  color,
+  maxValue = 100
+}: {
+  data: Array<{ value: number; time: number }>;
+  dataKey: string;
+  color: string;
+  maxValue?: number;
+}) {
+  return (
+    <ResponsiveContainer width="100%" height={60}>
+      <AreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+        <defs>
+          <linearGradient id={`gradient-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="95%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <YAxis domain={[0, maxValue]} hide />
+        <Area
+          type="monotone"
+          dataKey="value"
+          stroke={color}
+          strokeWidth={2}
+          fill={`url(#gradient-${dataKey})`}
+          isAnimationActive={false}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+function StatCard({
+  title,
+  value,
+  unit,
+  icon: Icon,
+  color,
+  history,
+  maxValue = 100,
+}: {
+  title: string;
+  value: number;
+  unit: string;
+  icon: typeof Cpu;
+  color: string;
+  history: Array<{ value: number; time: number }>;
+  maxValue?: number;
+}) {
+  const colorClasses: Record<string, string> = {
+    orange: 'text-orange-400 from-orange-500/20 to-orange-600/10 border-orange-500/30',
+    blue: 'text-blue-400 from-blue-500/20 to-blue-600/10 border-blue-500/30',
+    red: 'text-red-400 from-red-500/20 to-red-600/10 border-red-500/30',
+    emerald: 'text-emerald-400 from-emerald-500/20 to-emerald-600/10 border-emerald-500/30',
+  };
+
+  const strokeColors: Record<string, string> = {
+    orange: '#fb923c',
+    blue: '#60a5fa',
+    red: '#f87171',
+    emerald: '#34d399',
+  };
+
+  return (
+    <Card className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              'flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br border',
+              colorClasses[color]
+            )}>
+              <Icon className={cn('h-4 w-4', colorClasses[color].split(' ')[0])} />
+            </div>
+            <span className="text-sm text-slate-400">{title}</span>
+          </div>
+          <div className="text-right">
+            <span className={cn('text-2xl font-bold font-mono', colorClasses[color].split(' ')[0])}>
+              {value.toFixed(1)}
+            </span>
+            <span className="text-sm text-slate-500 ml-1">{unit}</span>
+          </div>
+        </div>
+        <MiniChart data={history} dataKey={title} color={strokeColors[color]} maxValue={maxValue} />
+      </CardContent>
+    </Card>
+  );
 }
 
 function NodeCard({ node }: { node: ProxmoxNode }) {
@@ -58,7 +162,6 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* CPU */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-slate-400">
@@ -70,7 +173,6 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
           <Progress value={cpuPercent} className="h-2" />
         </div>
 
-        {/* Memory */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2 text-slate-400">
@@ -84,7 +186,6 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
           <Progress value={memPercent} className="h-2" />
         </div>
 
-        {/* Uptime */}
         <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-800">
           <div className="flex items-center gap-2 text-slate-400">
             <Clock className="h-4 w-4" />
@@ -97,43 +198,35 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
   );
 }
 
-function VMCard({ vm }: { vm: ProxmoxVM }) {
+function VMListItem({ vm }: { vm: ProxmoxVM }) {
   const cpuPercent = vm.cpu * 100;
   const memPercent = vm.maxmem > 0 ? (vm.mem / vm.maxmem) * 100 : 0;
   const isRunning = vm.status === 'running';
 
   return (
-    <Card className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'flex items-center justify-center h-10 w-10 rounded-lg border',
-                vm.type === 'lxc'
-                  ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30'
-                  : 'bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/30'
-              )}
-            >
-              {vm.type === 'lxc' ? (
-                <Box className="h-5 w-5 text-blue-400" />
-              ) : (
-                <Monitor className="h-5 w-5 text-purple-400" />
-              )}
-            </div>
-            <div>
-              <CardTitle className="text-base font-semibold text-slate-100">
-                {vm.name}
-              </CardTitle>
-              <p className="text-xs text-slate-500">
-                {vm.type === 'lxc' ? 'LXC Container' : 'Virtual Machine'} • ID: {vm.vmid}
-              </p>
-            </div>
-          </div>
+    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800/30 transition-colors">
+      <div
+        className={cn(
+          'flex items-center justify-center h-10 w-10 rounded-lg border shrink-0',
+          vm.type === 'lxc'
+            ? 'bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500/30'
+            : 'bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/30'
+        )}
+      >
+        {vm.type === 'lxc' ? (
+          <Box className="h-5 w-5 text-blue-400" />
+        ) : (
+          <Monitor className="h-5 w-5 text-purple-400" />
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-slate-100 truncate">{vm.name}</span>
           <Badge
             variant="outline"
             className={cn(
-              'font-mono text-xs border',
+              'text-[10px] px-1.5 py-0 border shrink-0',
               isRunning
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
                 : 'bg-slate-500/20 text-slate-400 border-slate-500/50'
@@ -142,55 +235,46 @@ function VMCard({ vm }: { vm: ProxmoxVM }) {
             {vm.status}
           </Badge>
         </div>
-      </CardHeader>
-      {isRunning && (
-        <CardContent className="space-y-3">
-          {/* CPU */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">CPU</span>
-              <span className="font-mono text-slate-400">{cpuPercent.toFixed(1)}%</span>
-            </div>
-            <Progress value={cpuPercent} className="h-1.5" />
-          </div>
-
-          {/* Memory */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-500">Memory</span>
-              <span className="font-mono text-slate-400">
-                {formatBytes(vm.mem)} / {formatBytes(vm.maxmem)}
-              </span>
-            </div>
-            <Progress value={memPercent} className="h-1.5" />
-          </div>
-
-          {/* Uptime */}
-          {vm.uptime && (
-            <div className="flex items-center justify-between text-xs pt-1">
-              <span className="text-slate-500">Uptime</span>
-              <span className="font-mono text-slate-400">{formatUptime(vm.uptime)}</span>
-            </div>
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <span className={vm.type === 'lxc' ? 'text-blue-400' : 'text-purple-400'}>
+            {vm.type === 'lxc' ? 'LXC' : 'VM'}
+          </span>
+          <span>•</span>
+          <span>ID: {vm.vmid}</span>
+          {isRunning && vm.uptime && (
+            <>
+              <span>•</span>
+              <span>{formatUptime(vm.uptime)}</span>
+            </>
           )}
-        </CardContent>
+        </div>
+      </div>
+
+      {isRunning && (
+        <div className="flex items-center gap-4 text-xs shrink-0">
+          <div className="text-right">
+            <div className="text-slate-500">CPU</div>
+            <div className="font-mono text-slate-300">{cpuPercent.toFixed(0)}%</div>
+          </div>
+          <div className="text-right">
+            <div className="text-slate-500">RAM</div>
+            <div className="font-mono text-slate-300">{memPercent.toFixed(0)}%</div>
+          </div>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }
 
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => (
           <Card key={i} className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
-            <CardHeader>
-              <Skeleton className="h-12 w-12 rounded-lg bg-slate-800" />
-              <Skeleton className="h-4 w-32 bg-slate-800 mt-2" />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Skeleton className="h-2 w-full bg-slate-800" />
-              <Skeleton className="h-2 w-full bg-slate-800" />
+            <CardContent className="p-4">
+              <Skeleton className="h-8 w-24 bg-slate-800 mb-3" />
+              <Skeleton className="h-16 w-full bg-slate-800" />
             </CardContent>
           </Card>
         ))}
@@ -200,7 +284,52 @@ function LoadingSkeleton() {
 }
 
 export default function ProxmoxPage() {
-  const { data, isLoading, error } = useProxmox();
+  const { data: proxmoxData, isLoading: proxmoxLoading, error: proxmoxError } = useProxmox();
+  const { data: dashdotData } = useDashdot();
+
+  const [cpuHistory, setCpuHistory] = useState<Array<{ value: number; time: number }>>([]);
+  const [ramHistory, setRamHistory] = useState<Array<{ value: number; time: number }>>([]);
+  const [tempHistory, setTempHistory] = useState<Array<{ value: number; time: number }>>([]);
+
+  // Update history when new data arrives
+  useEffect(() => {
+    if (proxmoxData?.data?.nodes?.[0]) {
+      const node = proxmoxData.data.nodes[0];
+      const cpuPercent = node.cpu * 100;
+      const memPercent = (node.mem / node.maxmem) * 100;
+      const now = Date.now();
+
+      setCpuHistory(prev => {
+        const newHistory = [...prev, { value: cpuPercent, time: now }];
+        return newHistory.slice(-MAX_HISTORY_POINTS);
+      });
+
+      setRamHistory(prev => {
+        const newHistory = [...prev, { value: memPercent, time: now }];
+        return newHistory.slice(-MAX_HISTORY_POINTS);
+      });
+    }
+  }, [proxmoxData]);
+
+  useEffect(() => {
+    if (dashdotData?.data?.temps?.cpu) {
+      const now = Date.now();
+      setTempHistory(prev => {
+        const newHistory = [...prev, { value: dashdotData.data!.temps.cpu, time: now }];
+        return newHistory.slice(-MAX_HISTORY_POINTS);
+      });
+    }
+  }, [dashdotData]);
+
+  const currentCpu = proxmoxData?.data?.nodes?.[0]?.cpu ? proxmoxData.data.nodes[0].cpu * 100 : 0;
+  const currentRam = proxmoxData?.data?.nodes?.[0]
+    ? (proxmoxData.data.nodes[0].mem / proxmoxData.data.nodes[0].maxmem) * 100
+    : 0;
+  const currentTemp = dashdotData?.data?.temps?.cpu || 0;
+
+  const vms = proxmoxData?.data?.vms || [];
+  const runningVms = vms.filter(vm => vm.status === 'running' && vm.type === 'qemu');
+  const runningContainers = vms.filter(vm => vm.status === 'running' && vm.type === 'lxc');
 
   return (
     <div className="min-h-screen">
@@ -211,44 +340,94 @@ export default function ProxmoxPage() {
             <h1 className="text-lg font-semibold text-slate-100">Proxmox VE</h1>
             <p className="text-xs text-slate-500">Virtualization Platform</p>
           </div>
+          <div className="ml-auto flex items-center gap-2">
+            <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/30">
+              <Monitor className="h-3 w-3 mr-1" />
+              {runningVms.length} VMs
+            </Badge>
+            <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
+              <Box className="h-3 w-3 mr-1" />
+              {runningContainers.length} LXC
+            </Badge>
+          </div>
         </div>
       </header>
 
-      <div className="p-6 space-y-8">
-        {isLoading && <LoadingSkeleton />}
+      <div className="p-6 space-y-6">
+        {proxmoxLoading && <LoadingSkeleton />}
 
-        {error && (
+        {proxmoxError && (
           <div className="bg-red-950/20 border border-red-900/50 rounded-lg p-4 text-red-400 text-sm">
-            Failed to connect to Proxmox: {error.message}
+            Failed to connect to Proxmox: {proxmoxError.message}
           </div>
         )}
 
-        {data?.success && data.data && (
+        {proxmoxData?.success && proxmoxData.data && (
           <>
-            {/* Nodes Section */}
+            {/* Stats Cards with Graphs */}
+            <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard
+                title="CPU"
+                value={currentCpu}
+                unit="%"
+                icon={Cpu}
+                color="orange"
+                history={cpuHistory}
+              />
+              <StatCard
+                title="RAM"
+                value={currentRam}
+                unit="%"
+                icon={MemoryStick}
+                color="blue"
+                history={ramHistory}
+              />
+              <StatCard
+                title="Temperature"
+                value={currentTemp}
+                unit="°C"
+                icon={Thermometer}
+                color={currentTemp > 70 ? 'red' : 'emerald'}
+                history={tempHistory}
+                maxValue={100}
+              />
+            </section>
+
+            {/* Node Info */}
             <section className="space-y-4">
-              <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider">
-                Nodes ({data.data.nodes.length})
+              <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <Server className="h-4 w-4 text-orange-400" />
+                Nodes ({proxmoxData.data.nodes.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {data.data.nodes.map((node) => (
+                {proxmoxData.data.nodes.map((node) => (
                   <NodeCard key={node.node} node={node} />
                 ))}
               </div>
             </section>
 
-            {/* VMs Section */}
+            {/* VMs & Containers List */}
             <section className="space-y-4">
-              <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider">
-                Virtual Machines & Containers ({data.data.vms.length})
+              <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <Activity className="h-4 w-4 text-purple-400" />
+                Virtual Machines & Containers ({vms.length})
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {data.data.vms
-                  .sort((a, b) => (a.status === 'running' ? -1 : 1) - (b.status === 'running' ? -1 : 1))
-                  .map((vm) => (
-                    <VMCard key={`${vm.type}-${vm.vmid}`} vm={vm} />
-                  ))}
-              </div>
+              <Card className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
+                <CardContent className="p-2 max-h-96 overflow-y-auto">
+                  <div className="divide-y divide-slate-800/50">
+                    {vms
+                      .sort((a, b) => {
+                        // Sort: running first, then by type (VMs before LXC), then by name
+                        if (a.status !== b.status) return a.status === 'running' ? -1 : 1;
+                        if (a.type !== b.type) return a.type === 'qemu' ? -1 : 1;
+                        return a.name.localeCompare(b.name);
+                      })
+                      .map((vm) => (
+                        <VMListItem key={`${vm.type}-${vm.vmid}`} vm={vm} />
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
             </section>
           </>
         )}
