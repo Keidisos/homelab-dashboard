@@ -109,24 +109,36 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Load existing settings first to merge with new values
+    const existingSettings = await loadSettings();
+
+    // Helper: use new value if not empty, otherwise keep existing
+    const mergeValue = (newVal: string | undefined, existingVal: string | undefined) => {
+      if (newVal && newVal.trim() !== '') return newVal;
+      return existingVal || undefined;
+    };
+
+    // Merge new URLs with existing ones
+    const mergedUrls = {
+      proxmox: mergeValue(urls.proxmox, existingSettings.urls.proxmox),
+      portainer: mergeValue(urls.portainer, existingSettings.urls.portainer),
+      jellyfin: mergeValue(urls.jellyfin, existingSettings.urls.jellyfin),
+      jellyseerr: mergeValue(urls.jellyseerr, existingSettings.urls.jellyseerr),
+      radarr: mergeValue(urls.radarr, existingSettings.urls.radarr),
+      sonarr: mergeValue(urls.sonarr, existingSettings.urls.sonarr),
+      qbittorrent: mergeValue(urls.qbittorrent, existingSettings.urls.qbittorrent),
+      homeassistant: mergeValue(urls.homeassistant, existingSettings.urls.homeassistant),
+      homarr: mergeValue(urls.homarr, existingSettings.urls.homarr),
+      uptimekuma: mergeValue(urls.uptimekuma, existingSettings.urls.uptimekuma),
+      nextcloud: mergeValue(urls.nextcloud, existingSettings.urls.nextcloud),
+      proxmoxAdmin: mergeValue(urls.proxmoxAdmin, existingSettings.urls.proxmoxAdmin),
+      updateDashboard: mergeValue(urls.updateDashboard, existingSettings.urls.updateDashboard),
+      pterodactyl: mergeValue(urls.pterodactyl, existingSettings.urls.pterodactyl),
+      nas: mergeValue(urls.nas, existingSettings.urls.nas),
+    };
+
     const settings: AppSettings = {
-      urls: {
-        proxmox: urls.proxmox || undefined,
-        portainer: urls.portainer || undefined,
-        jellyfin: urls.jellyfin || undefined,
-        jellyseerr: urls.jellyseerr || undefined,
-        radarr: urls.radarr || undefined,
-        sonarr: urls.sonarr || undefined,
-        qbittorrent: urls.qbittorrent || undefined,
-        homeassistant: urls.homeassistant || undefined,
-        homarr: urls.homarr || undefined,
-        uptimekuma: urls.uptimekuma || undefined,
-        nextcloud: urls.nextcloud || undefined,
-        proxmoxAdmin: urls.proxmoxAdmin || undefined,
-        updateDashboard: urls.updateDashboard || undefined,
-        pterodactyl: urls.pterodactyl || undefined,
-        nas: urls.nas || undefined,
-      },
+      urls: mergedUrls,
     };
 
     await saveSettings(settings);
