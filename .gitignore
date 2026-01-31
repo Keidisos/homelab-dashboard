@@ -24,6 +24,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+# Settings data (user-specific)
+data/
+
 # IDE
 .idea
 .vscode
