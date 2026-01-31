@@ -7,7 +7,7 @@ services:
       - "3000:3000"
     volumes:
       # Persist settings data
-      - ./data:/app/data
+      - dashboard-data:/app/data
     environment:
       # Proxmox
       - PROXMOX_HOST=${PROXMOX_HOST}
@@ -36,6 +36,9 @@ services:
       - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
     networks:
       - homelab
+
+volumes:
+  dashboard-data:
 
 networks:
   homelab:
