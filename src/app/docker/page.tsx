@@ -26,7 +26,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDocker } from '@/hooks/use-services';
-import { useAppUrls } from '@/hooks/use-settings';
+import { useAppUrls, type AppUrls } from '@/hooks/use-settings';
 import { cn } from '@/lib/utils';
 import type { DockerContainer } from '@/types';
 import type { LucideIcon } from 'lucide-react';
@@ -139,10 +139,10 @@ function StatCard({
   );
 }
 
-function ContainerRow({ container, urls }: { container: DockerContainer; urls: Record<string, string> | null }) {
+function ContainerRow({ container, urls }: { container: DockerContainer; urls: AppUrls | null }) {
   const Icon = getContainerIcon(container.name);
   const urlKey = getContainerUrlKey(container.name);
-  const externalUrl = urlKey && urls ? urls[urlKey] : undefined;
+  const externalUrl = urlKey && urls ? urls[urlKey as keyof AppUrls] : undefined;
   const gradientColor = getContainerColor(container.name);
   const isRunning = container.status === 'running';
   const isClickable = externalUrl && isRunning;
