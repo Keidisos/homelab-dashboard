@@ -22,7 +22,6 @@ import {
   Gauge,
   Server,
   Shield,
-  MoreVertical,
   StopCircle,
   Loader2,
 } from 'lucide-react';
@@ -150,7 +149,6 @@ function ContainerRow({ container, urls, onAction, isActionPending }: {
   onAction: (containerId: string, action: ContainerAction) => void;
   isActionPending: boolean;
 }) {
-  const [showActions, setShowActions] = useState(false);
   const Icon = getContainerIcon(container.name);
   const urlKey = getContainerUrlKey(container.name);
   const externalUrl = urlKey && urls ? urls[urlKey as keyof AppUrls] : undefined;
@@ -249,72 +247,55 @@ function ContainerRow({ container, urls, onAction, isActionPending }: {
         {status.label}
       </Badge>
 
-      {/* Action Buttons */}
-      <div className="relative flex items-center gap-1 shrink-0">
+      {/* Action Buttons - Inline */}
+      <div className="flex items-center gap-1 shrink-0">
         {isActionPending ? (
-          <div className="w-20 flex justify-center">
+          <div className="w-24 flex justify-center">
             <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
           </div>
-        ) : (
+        ) : isRunning ? (
           <>
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 hover:bg-slate-700/50"
+              className="h-7 w-7 p-0 hover:bg-red-500/20 text-slate-400 hover:text-red-400"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setShowActions(!showActions);
+                onAction(container.id, 'stop');
               }}
+              title="Stop"
             >
-              <MoreVertical className="h-4 w-4 text-slate-400" />
+              <StopCircle className="h-4 w-4" />
             </Button>
-            {showActions && (
-              <div className="absolute right-0 top-8 z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 min-w-[120px]">
-                {isRunning ? (
-                  <>
-                    <button
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onAction(container.id, 'stop');
-                        setShowActions(false);
-                      }}
-                    >
-                      <StopCircle className="h-3.5 w-3.5 text-red-400" />
-                      Stop
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onAction(container.id, 'restart');
-                        setShowActions(false);
-                      }}
-                    >
-                      <RotateCw className="h-3.5 w-3.5 text-amber-400" />
-                      Restart
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onAction(container.id, 'start');
-                      setShowActions(false);
-                    }}
-                  >
-                    <Play className="h-3.5 w-3.5 text-emerald-400" />
-                    Start
-                  </button>
-                )}
-              </div>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAction(container.id, 'restart');
+              }}
+              title="Restart"
+            >
+              <RotateCw className="h-4 w-4" />
+            </Button>
           </>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onAction(container.id, 'start');
+            }}
+            title="Start"
+          >
+            <Play className="h-4 w-4" />
+          </Button>
         )}
       </div>
 

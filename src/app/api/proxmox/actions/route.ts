@@ -30,6 +30,7 @@ async function executeVMAction(
   const proxmoxAction = action === 'stop' ? 'stop' : action;
 
   const url = `${host}/api2/json/nodes/${node}/${type}/${vmid}/status/${proxmoxAction}`;
+  console.log('Proxmox action URL:', url);
 
   const response = await fetchInsecure(url, {
     method: 'POST',

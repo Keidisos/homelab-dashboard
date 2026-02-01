@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Activity, Play, StopCircle, RotateCw, Power, MoreVertical, Loader2 } from 'lucide-react';
+import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Activity, Play, StopCircle, RotateCw, Power, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -201,7 +201,6 @@ function VMListItem({ vm, nodeName, onAction, isActionPending }: {
   onAction: (node: string, vmid: number, type: VMType, action: VMAction) => void;
   isActionPending: boolean;
 }) {
-  const [showActions, setShowActions] = useState(false);
   const cpuPercent = vm.cpu * 100;
   const memPercent = vm.maxmem > 0 ? (vm.mem / vm.maxmem) * 100 : 0;
   const isRunning = vm.status === 'running';
@@ -266,72 +265,52 @@ function VMListItem({ vm, nodeName, onAction, isActionPending }: {
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="relative shrink-0">
+      {/* Action Buttons - Inline */}
+      <div className="flex items-center gap-1 shrink-0">
         {isActionPending ? (
-          <div className="w-8 flex justify-center">
+          <div className="w-24 flex justify-center">
             <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
           </div>
-        ) : (
+        ) : isRunning ? (
           <>
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 w-7 p-0 hover:bg-slate-700/50"
-              onClick={() => setShowActions(!showActions)}
+              className="h-7 w-7 p-0 hover:bg-amber-500/20 text-slate-400 hover:text-amber-400"
+              onClick={() => onAction(nodeName, vm.vmid, vm.type, 'shutdown')}
+              title="Shutdown"
             >
-              <MoreVertical className="h-4 w-4 text-slate-400" />
+              <Power className="h-4 w-4" />
             </Button>
-            {showActions && (
-              <div className="absolute right-0 top-8 z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 min-w-[120px]">
-                {isRunning ? (
-                  <>
-                    <button
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
-                      onClick={() => {
-                        onAction(nodeName, vm.vmid, vm.type, 'shutdown');
-                        setShowActions(false);
-                      }}
-                    >
-                      <Power className="h-3.5 w-3.5 text-amber-400" />
-                      Shutdown
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
-                      onClick={() => {
-                        onAction(nodeName, vm.vmid, vm.type, 'stop');
-                        setShowActions(false);
-                      }}
-                    >
-                      <StopCircle className="h-3.5 w-3.5 text-red-400" />
-                      Stop
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
-                      onClick={() => {
-                        onAction(nodeName, vm.vmid, vm.type, 'reboot');
-                        setShowActions(false);
-                      }}
-                    >
-                      <RotateCw className="h-3.5 w-3.5 text-blue-400" />
-                      Reboot
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
-                    onClick={() => {
-                      onAction(nodeName, vm.vmid, vm.type, 'start');
-                      setShowActions(false);
-                    }}
-                  >
-                    <Play className="h-3.5 w-3.5 text-emerald-400" />
-                    Start
-                  </button>
-                )}
-              </div>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-red-500/20 text-slate-400 hover:text-red-400"
+              onClick={() => onAction(nodeName, vm.vmid, vm.type, 'stop')}
+              title="Stop"
+            >
+              <StopCircle className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-blue-500/20 text-slate-400 hover:text-blue-400"
+              onClick={() => onAction(nodeName, vm.vmid, vm.type, 'reboot')}
+              title="Reboot"
+            >
+              <RotateCw className="h-4 w-4" />
+            </Button>
           </>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400"
+            onClick={() => onAction(nodeName, vm.vmid, vm.type, 'start')}
+            title="Start"
+          >
+            <Play className="h-4 w-4" />
+          </Button>
         )}
       </div>
     </div>
