@@ -16,8 +16,16 @@ interface StatusPageMonitor {
   type?: string;
 }
 
+interface StatusPageConfig {
+  id: number;
+  slug: string;
+  title: string;
+  published: boolean;
+}
+
 interface StatusPageResponse {
-  ok: boolean;
+  ok?: boolean;
+  config?: StatusPageConfig;
   publicGroupList?: Array<{
     id: number;
     name: string;
@@ -52,6 +60,8 @@ async function fetchUptimeKuma(): Promise<UptimeKumaData> {
 
   // Fetch status page data
   const url = `${host}/api/status-page/${statusPageSlug}`;
+  console.log('Fetching Uptime Kuma from:', url);
+
   const response = await fetchInsecure(url, {
     headers: {
       'Accept': 'application/json',
@@ -60,21 +70,31 @@ async function fetchUptimeKuma(): Promise<UptimeKumaData> {
   });
 
   if (!response.ok) {
+    const errorText = await response.text().catch(() => 'No response body');
+    console.error('Uptime Kuma response error:', response.status, errorText);
     throw new Error(`Uptime Kuma API error: ${response.status}`);
   }
 
   const data: StatusPageResponse = await response.json();
+  console.log('Uptime Kuma response keys:', Object.keys(data));
 
-  if (!data.ok || !data.publicGroupList) {
-    throw new Error('Invalid response from Uptime Kuma');
+  // Handle different response formats
+  // Some versions return { ok: true, ... } others return { config: {...}, ... }
+  const hasValidData = data.publicGroupList || data.config;
+
+  if (!hasValidData) {
+    console.error('Uptime Kuma unexpected response:', JSON.stringify(data).substring(0, 500));
+    throw new Error('Invalid response from Uptime Kuma - no publicGroupList found');
   }
 
   const monitors: UptimeKumaMonitor[] = [];
   let upCount = 0;
   let downCount = 0;
 
-  for (const group of data.publicGroupList) {
-    for (const monitor of group.monitorList) {
+  const groups = data.publicGroupList || [];
+
+  for (const group of groups) {
+    for (const monitor of group.monitorList || []) {
       const heartbeats = data.heartbeatList?.[monitor.id.toString()] || [];
       const latestHeartbeat = heartbeats[heartbeats.length - 1];
       const uptime24h = data.uptimeList?.[`${monitor.id}_24`] || 0;
