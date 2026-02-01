@@ -36,7 +36,6 @@ async function executeVMAction(
     method: 'POST',
     headers: {
       Authorization: `PVEAPIToken=${tokenId}=${tokenSecret}`,
-      'Content-Type': 'application/json',
     },
   });
 
