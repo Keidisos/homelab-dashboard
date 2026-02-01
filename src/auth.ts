@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials"
 import type { NextAuthConfig } from "next-auth"
 
 const authConfig: NextAuthConfig = {
+  trustHost: true, // Trust all hosts (needed for Docker/homelab setups)
   providers: [
     Credentials({
       name: "credentials",
