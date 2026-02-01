@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Container,
   Film,
@@ -21,11 +22,15 @@ import {
   Gauge,
   Server,
   Shield,
+  MoreVertical,
+  StopCircle,
+  Loader2,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDocker } from '@/hooks/use-services';
+import { Button } from '@/components/ui/button';
+import { useDocker, useDockerAction, type ContainerAction } from '@/hooks/use-services';
 import { useAppUrls, type AppUrls } from '@/hooks/use-settings';
 import { cn } from '@/lib/utils';
 import type { DockerContainer } from '@/types';
@@ -139,7 +144,13 @@ function StatCard({
   );
 }
 
-function ContainerRow({ container, urls }: { container: DockerContainer; urls: AppUrls | null }) {
+function ContainerRow({ container, urls, onAction, isActionPending }: {
+  container: DockerContainer;
+  urls: AppUrls | null;
+  onAction: (containerId: string, action: ContainerAction) => void;
+  isActionPending: boolean;
+}) {
+  const [showActions, setShowActions] = useState(false);
   const Icon = getContainerIcon(container.name);
   const urlKey = getContainerUrlKey(container.name);
   const externalUrl = urlKey && urls ? urls[urlKey as keyof AppUrls] : undefined;
@@ -238,6 +249,75 @@ function ContainerRow({ container, urls }: { container: DockerContainer; urls: A
         {status.label}
       </Badge>
 
+      {/* Action Buttons */}
+      <div className="relative flex items-center gap-1 shrink-0">
+        {isActionPending ? (
+          <div className="w-20 flex justify-center">
+            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-slate-700/50"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowActions(!showActions);
+              }}
+            >
+              <MoreVertical className="h-4 w-4 text-slate-400" />
+            </Button>
+            {showActions && (
+              <div className="absolute right-0 top-8 z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 min-w-[120px]">
+                {isRunning ? (
+                  <>
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onAction(container.id, 'stop');
+                        setShowActions(false);
+                      }}
+                    >
+                      <StopCircle className="h-3.5 w-3.5 text-red-400" />
+                      Stop
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onAction(container.id, 'restart');
+                        setShowActions(false);
+                      }}
+                    >
+                      <RotateCw className="h-3.5 w-3.5 text-amber-400" />
+                      Restart
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onAction(container.id, 'start');
+                      setShowActions(false);
+                    }}
+                  >
+                    <Play className="h-3.5 w-3.5 text-emerald-400" />
+                    Start
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* External Link Icon */}
       <div className="w-9 flex items-center justify-center shrink-0">
         {isClickable && (
@@ -318,6 +398,18 @@ function LoadingSkeleton() {
 export default function DockerPage() {
   const { data, isLoading, error } = useDocker();
   const urls = useAppUrls();
+  const dockerAction = useDockerAction();
+  const [pendingContainerId, setPendingContainerId] = useState<string | null>(null);
+
+  const handleAction = (containerId: string, action: ContainerAction) => {
+    setPendingContainerId(containerId);
+    dockerAction.mutate(
+      { containerId, action },
+      {
+        onSettled: () => setPendingContainerId(null),
+      }
+    );
+  };
 
   const containers = data?.data?.containers || [];
   const runningCount = containers.filter((c) => c.status === 'running').length;
@@ -422,7 +514,8 @@ export default function DockerPage() {
               <p className="hidden md:block w-32 text-xs font-medium text-slate-500 uppercase tracking-wider">ID</p>
               <p className="hidden lg:block w-24 text-xs font-medium text-slate-500 uppercase tracking-wider">State</p>
               <p className="w-24 text-xs font-medium text-slate-500 uppercase tracking-wider text-center">Status</p>
-              <div className="w-9" /> {/* Action spacer */}
+              <p className="w-20 text-xs font-medium text-slate-500 uppercase tracking-wider text-center">Actions</p>
+              <div className="w-9" /> {/* Link spacer */}
             </div>
 
             {/* Scrollable List */}
@@ -434,7 +527,13 @@ export default function DockerPage() {
                   return a.name.localeCompare(b.name);
                 })
                 .map((container) => (
-                  <ContainerRow key={container.id} container={container} urls={urls} />
+                  <ContainerRow
+                    key={container.id}
+                    container={container}
+                    urls={urls}
+                    onAction={handleAction}
+                    isActionPending={pendingContainerId === container.id}
+                  />
                 ))}
             </div>
 

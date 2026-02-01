@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { signOut } from 'next-auth/react';
 import {
   Server,
   Container,
@@ -12,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Activity,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -185,6 +187,45 @@ export function Sidebar({ className }: SidebarProps) {
               </>
             )}
           </Button>
+
+          {/* Logout button */}
+          {(() => {
+            const logoutButton = (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                className={cn(
+                  'w-full',
+                  'text-red-400/70 hover:text-red-400',
+                  'hover:bg-red-500/10',
+                  collapsed && 'justify-center'
+                )}
+              >
+                {collapsed ? (
+                  <LogOut className="h-4 w-4" />
+                ) : (
+                  <>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    <span className="text-xs">Logout</span>
+                  </>
+                )}
+              </Button>
+            );
+
+            if (collapsed) {
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>{logoutButton}</TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 border-slate-700">
+                    Logout
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return logoutButton;
+          })()}
         </div>
       </aside>
     </TooltipProvider>

@@ -9,6 +9,11 @@ services:
       # Persist settings data
       - dashboard-data:/app/data
     environment:
+      # Authentication
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_USERNAME=${AUTH_USERNAME:-admin}
+      - AUTH_PASSWORD=${AUTH_PASSWORD}
+
       # Proxmox
       - PROXMOX_HOST=${PROXMOX_HOST}
       - PROXMOX_TOKEN_ID=${PROXMOX_TOKEN_ID}
@@ -34,6 +39,10 @@ services:
       - QBITTORRENT_HOST=${QBITTORRENT_HOST}
       - QBITTORRENT_USERNAME=${QBITTORRENT_USERNAME}
       - QBITTORRENT_PASSWORD=${QBITTORRENT_PASSWORD}
+
+      # Uptime Kuma
+      - UPTIME_KUMA_HOST=${UPTIME_KUMA_HOST}
+      - UPTIME_KUMA_STATUS_PAGE=${UPTIME_KUMA_STATUS_PAGE:-default}
     networks:
       - homelab
 

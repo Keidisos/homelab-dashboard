@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Activity } from 'lucide-react';
+import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Activity, Play, StopCircle, RotateCw, Power, MoreVertical, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useProxmox } from '@/hooks/use-services';
+import { Button } from '@/components/ui/button';
+import { useProxmox, useProxmoxAction, type VMAction, type VMType } from '@/hooks/use-services';
 import { cn } from '@/lib/utils';
 import type { ProxmoxNode, ProxmoxVM } from '@/types';
 import {
@@ -194,7 +195,13 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
   );
 }
 
-function VMListItem({ vm }: { vm: ProxmoxVM }) {
+function VMListItem({ vm, nodeName, onAction, isActionPending }: {
+  vm: ProxmoxVM;
+  nodeName: string;
+  onAction: (node: string, vmid: number, type: VMType, action: VMAction) => void;
+  isActionPending: boolean;
+}) {
+  const [showActions, setShowActions] = useState(false);
   const cpuPercent = vm.cpu * 100;
   const memPercent = vm.maxmem > 0 ? (vm.mem / vm.maxmem) * 100 : 0;
   const isRunning = vm.status === 'running';
@@ -258,6 +265,75 @@ function VMListItem({ vm }: { vm: ProxmoxVM }) {
           </div>
         </div>
       )}
+
+      {/* Action Buttons */}
+      <div className="relative shrink-0">
+        {isActionPending ? (
+          <div className="w-8 flex justify-center">
+            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+          </div>
+        ) : (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 hover:bg-slate-700/50"
+              onClick={() => setShowActions(!showActions)}
+            >
+              <MoreVertical className="h-4 w-4 text-slate-400" />
+            </Button>
+            {showActions && (
+              <div className="absolute right-0 top-8 z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 min-w-[120px]">
+                {isRunning ? (
+                  <>
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
+                      onClick={() => {
+                        onAction(nodeName, vm.vmid, vm.type, 'shutdown');
+                        setShowActions(false);
+                      }}
+                    >
+                      <Power className="h-3.5 w-3.5 text-amber-400" />
+                      Shutdown
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
+                      onClick={() => {
+                        onAction(nodeName, vm.vmid, vm.type, 'stop');
+                        setShowActions(false);
+                      }}
+                    >
+                      <StopCircle className="h-3.5 w-3.5 text-red-400" />
+                      Stop
+                    </button>
+                    <button
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
+                      onClick={() => {
+                        onAction(nodeName, vm.vmid, vm.type, 'reboot');
+                        setShowActions(false);
+                      }}
+                    >
+                      <RotateCw className="h-3.5 w-3.5 text-blue-400" />
+                      Reboot
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-300 hover:bg-slate-700/50 transition-colors"
+                    onClick={() => {
+                      onAction(nodeName, vm.vmid, vm.type, 'start');
+                      setShowActions(false);
+                    }}
+                  >
+                    <Play className="h-3.5 w-3.5 text-emerald-400" />
+                    Start
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -281,9 +357,21 @@ function LoadingSkeleton() {
 
 export default function ProxmoxPage() {
   const { data: proxmoxData, isLoading: proxmoxLoading, error: proxmoxError } = useProxmox();
+  const proxmoxAction = useProxmoxAction();
 
   const [cpuHistory, setCpuHistory] = useState<Array<{ value: number; time: number }>>([]);
   const [ramHistory, setRamHistory] = useState<Array<{ value: number; time: number }>>([]);
+  const [pendingVmId, setPendingVmId] = useState<string | null>(null);
+
+  const handleAction = (node: string, vmid: number, type: VMType, action: VMAction) => {
+    setPendingVmId(`${type}-${vmid}`);
+    proxmoxAction.mutate(
+      { node, vmid, type, action },
+      {
+        onSettled: () => setPendingVmId(null),
+      }
+    );
+  };
 
   // Update history when new data arrives
   useEffect(() => {
@@ -313,6 +401,7 @@ export default function ProxmoxPage() {
   const vms = proxmoxData?.data?.vms || [];
   const runningVms = vms.filter(vm => vm.status === 'running' && vm.type === 'qemu');
   const runningContainers = vms.filter(vm => vm.status === 'running' && vm.type === 'lxc');
+  const nodeName = proxmoxData?.data?.nodes?.[0]?.node || 'pve';
 
   return (
     <div className="min-h-screen">
@@ -392,7 +481,13 @@ export default function ProxmoxPage() {
                         return a.name.localeCompare(b.name);
                       })
                       .map((vm) => (
-                        <VMListItem key={`${vm.type}-${vm.vmid}`} vm={vm} />
+                        <VMListItem
+                          key={`${vm.type}-${vm.vmid}`}
+                          vm={vm}
+                          nodeName={nodeName}
+                          onAction={handleAction}
+                          isActionPending={pendingVmId === `${vm.type}-${vm.vmid}`}
+                        />
                       ))}
                   </div>
                 </CardContent>

@@ -49,6 +49,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useProxmox, useDocker, useJellyfin, usePterodactyl } from '@/hooks/use-services';
 import { useQuickLinks } from '@/hooks/use-settings';
+import { UptimeKumaSection } from '@/components/dashboard/uptime-kuma-section';
 import type { LucideIcon } from 'lucide-react';
 import type { QuickLink } from '@/hooks/use-settings';
 
@@ -427,6 +428,9 @@ export default function DashboardPage() {
       </header>
 
       <div className="p-6 space-y-8">
+        {/* Uptime Monitoring Section */}
+        <UptimeKumaSection />
+
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* System Overview - Takes 2 columns */}

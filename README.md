@@ -71,10 +71,13 @@ Navigate to **Settings** (bottom-left of the sidebar) to configure your applicat
 
 ## Environment Variables
 
-Only API credentials need to be set in `.env`. Application URLs are managed via the Settings page.
+Authentication and API credentials need to be set in `.env`. Application URLs are managed via the Settings page.
 
 | Variable | Description |
 |----------|-------------|
+| `AUTH_SECRET` | Secret for NextAuth (generate with `openssl rand -base64 32`) |
+| `AUTH_USERNAME` | Login username (default: admin) |
+| `AUTH_PASSWORD` | Login password |
 | `PROXMOX_HOST` | Proxmox VE URL (https://ip:8006) |
 | `PROXMOX_TOKEN_ID` | API Token ID (user@pve!tokenname) |
 | `PROXMOX_TOKEN_SECRET` | API Token Secret |

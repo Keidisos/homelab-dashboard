@@ -1,8 +1,15 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import type { ApiResponse, ProxmoxData, DockerContainer, JellyfinData, PterodactylData, StorageData, JellyseerrData, QBittorrentData } from '@/types';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { ApiResponse, ProxmoxData, DockerContainer, JellyfinData, PterodactylData, StorageData, JellyseerrData, QBittorrentData, UptimeKumaData } from '@/types';
 import { config } from '@/config/dashboard';
+
+// ============================================
+// CONTAINER ACTION TYPES
+// ============================================
+export type ContainerAction = 'start' | 'stop' | 'restart';
+export type VMAction = 'start' | 'stop' | 'shutdown' | 'reboot';
+export type VMType = 'qemu' | 'lxc';
 
 // ============================================
 // PROXMOX HOOK
@@ -106,5 +113,78 @@ export function useQBittorrent() {
       return response.json();
     },
     refetchInterval: config.polling.docker, // Use same polling as Docker
+  });
+}
+
+// ============================================
+// UPTIME KUMA HOOK
+// ============================================
+export function useUptimeKuma() {
+  return useQuery<ApiResponse<UptimeKumaData>>({
+    queryKey: ['uptime-kuma'],
+    queryFn: async () => {
+      const response = await fetch('/api/uptime-kuma');
+      if (!response.ok) throw new Error('Failed to fetch Uptime Kuma data');
+      return response.json();
+    },
+    refetchInterval: config.polling.default,
+  });
+}
+
+// ============================================
+// DOCKER CONTAINER ACTIONS MUTATION
+// ============================================
+export function useDockerAction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ containerId, action }: { containerId: string; action: ContainerAction }) => {
+      const response = await fetch('/api/docker/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ containerId, action }),
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Action failed');
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate docker query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['docker'] });
+    },
+  });
+}
+
+// ============================================
+// PROXMOX VM ACTIONS MUTATION
+// ============================================
+export function useProxmoxAction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      node,
+      vmid,
+      type,
+      action,
+    }: {
+      node: string;
+      vmid: number;
+      type: VMType;
+      action: VMAction;
+    }) => {
+      const response = await fetch('/api/proxmox/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ node, vmid, type, action }),
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Action failed');
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate proxmox query to refresh data
+      queryClient.invalidateQueries({ queryKey: ['proxmox'] });
+    },
   });
 }

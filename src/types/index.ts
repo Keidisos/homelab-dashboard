@@ -195,6 +195,29 @@ export interface QBittorrentData {
 }
 
 // ============================================
+// UPTIME KUMA TYPES
+// ============================================
+export interface UptimeKumaMonitor {
+  id: number;
+  name: string;
+  url?: string;
+  type: string;
+  status: 'up' | 'down' | 'pending' | 'maintenance';
+  uptime24h: number;
+  uptime30d: number;
+  avgPing: number;
+  lastCheck: string;
+}
+
+export interface UptimeKumaData {
+  monitors: UptimeKumaMonitor[];
+  overallUptime: number;
+  totalMonitors: number;
+  upCount: number;
+  downCount: number;
+}
+
+// ============================================
 // API RESPONSE WRAPPER
 // ============================================
 export interface ApiResponse<T> {
