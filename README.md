@@ -97,34 +97,42 @@ Authentication and API credentials need to be set in `.env`. Application URLs ar
 
 ### Proxmox VE
 
+The dashboard supports both **read-only monitoring** (PVEAuditor) and **VM/Container control** (Administrator).
+
+#### Setup Steps
+
 1. Navigate to the Proxmox portal, click on **Datacenter**
-2. Expand **Permissions**, click on **Groups**
-3. Click the **Create** button
-4. Name the group something informative, like `api-users`
-5. Click on the **Permissions** "folder"
-6. Click **Add** -> **Group Permission**
-   - Path: `/`
-   - Group: group from Step 4
-   - Role: `PVEAuditor`
-   - Propagate: Checked
-7. Expand **Permissions**, click on **Users**
-8. Click the **Add** button
+2. Expand **Permissions**, click on **Users**
+3. Click the **Add** button
    - User name: something informative like `api`
    - Realm: `Proxmox VE authentication server`
    - Password: create a secure password
-   - Group: group from Step 4
-9. Expand **Permissions**, click on **API Tokens**
-10. Click the **Add** button
-    - User: user from Step 8
-    - Token ID: something informative like `dashboard`
-    - Privilege Separation: **Unchecked**
-11. **Copy the Secret** shown - it is only displayed once!
-12. Go back to the **Permissions** menu
-13. Click **Add** -> **API Token Permission**
-    - Path: `/`
-    - API Token: select the API token created in Step 10
-    - Role: `PVEAuditor`
-    - Propagate: Checked
+4. Expand **Permissions**, click on **API Tokens**
+5. Click the **Add** button
+   - User: user from Step 3
+   - Token ID: something informative like `dashboard`
+   - Privilege Separation: **Unchecked** (Important!)
+6. **Copy the Secret** shown - it is only displayed once!
+7. Go back to the **Permissions** menu
+8. Click **Add** -> **User Permission**
+   - Path: `/`
+   - User: user from Step 3
+   - Role: See table below
+   - Propagate: Checked
+9. Click **Add** -> **API Token Permission**
+   - Path: `/`
+   - API Token: select the API token created in Step 5
+   - Role: Same role as Step 8
+   - Propagate: Checked
+
+#### Permission Roles
+
+| Role | Capabilities |
+|------|--------------|
+| `PVEAuditor` | Read-only: view nodes, VMs, containers, and stats |
+| `Administrator` | Full control: start, stop, shutdown, reboot VMs/containers |
+
+**Important:** Both the **user** and the **API token** must have the same role assigned. The token inherits from the user but still requires explicit permissions for VM power management.
 
 Your environment variables will look like:
 ```
