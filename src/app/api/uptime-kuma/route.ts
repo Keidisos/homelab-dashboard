@@ -97,8 +97,14 @@ async function fetchUptimeKuma(): Promise<UptimeKumaData> {
     for (const monitor of group.monitorList || []) {
       const heartbeats = data.heartbeatList?.[monitor.id.toString()] || [];
       const latestHeartbeat = heartbeats[heartbeats.length - 1];
-      const uptime24h = data.uptimeList?.[`${monitor.id}_24`] || 0;
-      const uptime30d = data.uptimeList?.[`${monitor.id}_720`] || 0;
+
+      // Uptime Kuma returns uptime as decimal (0.9987 = 99.87%)
+      const rawUptime24h = data.uptimeList?.[`${monitor.id}_24`] || 0;
+      const rawUptime30d = data.uptimeList?.[`${monitor.id}_720`] || 0;
+
+      // Convert to percentage
+      const uptime24h = rawUptime24h > 1 ? rawUptime24h : rawUptime24h * 100;
+      const uptime30d = rawUptime30d > 1 ? rawUptime30d : rawUptime30d * 100;
 
       const status = latestHeartbeat ? mapStatus(latestHeartbeat.status) : 'pending';
 
