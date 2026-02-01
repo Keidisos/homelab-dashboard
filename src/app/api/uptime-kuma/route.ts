@@ -58,28 +58,54 @@ async function fetchUptimeKuma(): Promise<UptimeKumaData> {
     throw new Error('Uptime Kuma configuration missing');
   }
 
-  // Fetch status page data
-  const url = `${host}/api/status-page/${statusPageSlug}`;
-  console.log('Fetching Uptime Kuma from:', url);
+  // Fetch status page config
+  const configUrl = `${host}/api/status-page/${statusPageSlug}`;
+  console.log('Fetching Uptime Kuma config from:', configUrl);
 
-  const response = await fetchInsecure(url, {
-    headers: {
-      'Accept': 'application/json',
-    },
+  const configResponse = await fetchInsecure(configUrl, {
+    headers: { 'Accept': 'application/json' },
     timeout: 10000,
   });
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'No response body');
-    console.error('Uptime Kuma response error:', response.status, errorText);
-    throw new Error(`Uptime Kuma API error: ${response.status}`);
+  if (!configResponse.ok) {
+    const errorText = await configResponse.text().catch(() => 'No response body');
+    console.error('Uptime Kuma config response error:', configResponse.status, errorText);
+    throw new Error(`Uptime Kuma API error: ${configResponse.status}`);
   }
 
-  const data: StatusPageResponse = await response.json();
-  console.log('Uptime Kuma response keys:', Object.keys(data));
+  const configData: StatusPageResponse = await configResponse.json();
+  console.log('Uptime Kuma config response keys:', Object.keys(configData));
+
+  // Fetch heartbeat data from separate endpoint
+  const heartbeatUrl = `${host}/api/status-page/heartbeat/${statusPageSlug}`;
+  console.log('Fetching Uptime Kuma heartbeat from:', heartbeatUrl);
+
+  let heartbeatData: { heartbeatList?: Record<string, StatusPageHeartbeat[]>; uptimeList?: Record<string, number> } = {};
+
+  try {
+    const heartbeatResponse = await fetchInsecure(heartbeatUrl, {
+      headers: { 'Accept': 'application/json' },
+      timeout: 10000,
+    });
+
+    if (heartbeatResponse.ok) {
+      heartbeatData = await heartbeatResponse.json();
+      console.log('Uptime Kuma heartbeat response keys:', Object.keys(heartbeatData));
+    } else {
+      console.warn('Heartbeat endpoint returned:', heartbeatResponse.status);
+    }
+  } catch (err) {
+    console.warn('Failed to fetch heartbeat data:', err);
+  }
+
+  // Merge the data
+  const data = {
+    ...configData,
+    heartbeatList: heartbeatData.heartbeatList || {},
+    uptimeList: heartbeatData.uptimeList || {},
+  };
 
   // Handle different response formats
-  // Some versions return { ok: true, ... } others return { config: {...}, ... }
   const hasValidData = data.publicGroupList || data.config;
 
   if (!hasValidData) {
