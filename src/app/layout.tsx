@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "next-themes";
 import { QueryProvider } from "@/lib/query-provider";
 import { Sidebar } from "@/components/layout/sidebar";
 
@@ -28,18 +29,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased scrollbar-cyber`}
       >
-        <QueryProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 ml-56 transition-all duration-300">
-              {children}
-            </main>
-          </div>
-        </QueryProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark">
+          <QueryProvider>
+            <div className="flex min-h-screen">
+              <Sidebar />
+              <main className="flex-1 ml-56 transition-all duration-300">
+                {children}
+              </main>
+            </div>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

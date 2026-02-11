@@ -51,9 +51,44 @@
   --color-cyber-purple: oklch(0.55 0.22 280);
 }
 
-/* Force dark mode - Cyberpunk theme */
+/* Light theme (default) */
 :root {
   --radius: 0.625rem;
+  --background: oklch(0.97 0.005 260);
+  --foreground: oklch(0.15 0.02 260);
+  --card: oklch(0.99 0.002 260);
+  --card-foreground: oklch(0.15 0.02 260);
+  --popover: oklch(0.99 0.002 260);
+  --popover-foreground: oklch(0.15 0.02 260);
+  --primary: oklch(0.55 0.2 240);
+  --primary-foreground: oklch(0.98 0.005 260);
+  --secondary: oklch(0.93 0.005 260);
+  --secondary-foreground: oklch(0.20 0.02 260);
+  --muted: oklch(0.94 0.005 260);
+  --muted-foreground: oklch(0.45 0.02 260);
+  --accent: oklch(0.55 0.2 280);
+  --accent-foreground: oklch(0.98 0.005 260);
+  --destructive: oklch(0.55 0.25 25);
+  --border: oklch(0.88 0.01 260);
+  --input: oklch(0.90 0.005 260);
+  --ring: oklch(0.55 0.2 240);
+  --chart-1: oklch(0.55 0.2 240);
+  --chart-2: oklch(0.55 0.2 280);
+  --chart-3: oklch(0.55 0.18 145);
+  --chart-4: oklch(0.60 0.18 50);
+  --chart-5: oklch(0.50 0.2 330);
+  --sidebar: oklch(0.97 0.005 260);
+  --sidebar-foreground: oklch(0.20 0.02 260);
+  --sidebar-primary: oklch(0.55 0.2 240);
+  --sidebar-primary-foreground: oklch(0.20 0.02 260);
+  --sidebar-accent: oklch(0.93 0.005 260);
+  --sidebar-accent-foreground: oklch(0.20 0.02 260);
+  --sidebar-border: oklch(0.88 0.01 260);
+  --sidebar-ring: oklch(0.55 0.2 240);
+}
+
+/* Dark theme - Cyberpunk */
+.dark {
   --background: oklch(0.08 0.01 260);
   --foreground: oklch(0.95 0.01 260);
   --card: oklch(0.12 0.015 260);
@@ -93,23 +128,42 @@
   }
 
   html {
+    color-scheme: light;
+  }
+
+  html.dark {
     color-scheme: dark;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    min-height: 100vh;
+  }
+
+  /* Dark mode background gradient */
+  .dark body {
     background-image:
       radial-gradient(ellipse at top, oklch(0.12 0.03 280 / 40%) 0%, transparent 50%),
       radial-gradient(ellipse at bottom right, oklch(0.10 0.04 195 / 30%) 0%, transparent 50%);
-    min-height: 100vh;
+  }
+
+  /* Light mode background gradient */
+  :root:not(.dark) body {
+    background-image:
+      radial-gradient(ellipse at top, oklch(0.92 0.02 240 / 30%) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, oklch(0.94 0.015 195 / 20%) 0%, transparent 50%);
   }
 }
 
-/* Custom scrollbar for Cyberpunk look */
+/* Custom scrollbar */
 @layer utilities {
   .scrollbar-cyber {
     scrollbar-width: thin;
     scrollbar-color: oklch(0.35 0.08 195) transparent;
+  }
+
+  :root:not(.dark) .scrollbar-cyber {
+    scrollbar-color: oklch(0.70 0.05 240) transparent;
   }
 
   .scrollbar-cyber::-webkit-scrollbar {
@@ -126,8 +180,16 @@
     border-radius: 3px;
   }
 
+  :root:not(.dark) .scrollbar-cyber::-webkit-scrollbar-thumb {
+    background: oklch(0.70 0.05 240);
+  }
+
   .scrollbar-cyber::-webkit-scrollbar-thumb:hover {
     background: oklch(0.50 0.12 195);
+  }
+
+  :root:not(.dark) .scrollbar-cyber::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.55 0.08 240);
   }
 
   /* Thin scrollbar variant */
@@ -158,8 +220,16 @@
     box-shadow: 0 0 20px oklch(0.75 0.18 195 / 30%);
   }
 
+  :root:not(.dark) .glow-cyan {
+    box-shadow: 0 0 20px oklch(0.55 0.15 240 / 20%);
+  }
+
   .glow-magenta {
     box-shadow: 0 0 20px oklch(0.65 0.25 330 / 30%);
+  }
+
+  :root:not(.dark) .glow-magenta {
+    box-shadow: 0 0 20px oklch(0.55 0.2 330 / 20%);
   }
 
   /* Grid pattern background */
@@ -167,6 +237,13 @@
     background-image:
       linear-gradient(oklch(0.20 0.02 260 / 30%) 1px, transparent 1px),
       linear-gradient(90deg, oklch(0.20 0.02 260 / 30%) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  :root:not(.dark) .bg-grid-pattern {
+    background-image:
+      linear-gradient(oklch(0.85 0.01 260 / 40%) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.85 0.01 260 / 40%) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 }

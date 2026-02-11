@@ -14,9 +14,11 @@ import {
   ChevronRight,
   Activity,
   LogOut,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import {
   Tooltip,
   TooltipContent,
@@ -37,6 +39,7 @@ const navItems: NavItem[] = [
   { name: 'Docker', href: '/docker', icon: Container, color: 'text-blue-400' },
   { name: 'Jellyfin', href: '/jellyfin', icon: Tv, color: 'text-purple-400' },
   { name: 'Gaming', href: '/gaming', icon: Gamepad2, color: 'text-green-400' },
+  { name: 'Torrents', href: '/qbittorrent', icon: Download, color: 'text-amber-400' },
 ];
 
 const settingsItem: NavItem = { name: 'Settings', href: '/settings', icon: Settings, color: 'text-slate-400' };
@@ -54,8 +57,8 @@ export function Sidebar({ className }: SidebarProps) {
         className={cn(
           'fixed left-0 top-0 z-40 h-screen',
           'flex flex-col',
-          'bg-slate-950/80 backdrop-blur-xl',
-          'border-r border-slate-800/50',
+          'bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl',
+          'border-r border-slate-200/50 dark:border-slate-800/50',
           'transition-all duration-300 ease-in-out',
           collapsed ? 'w-16' : 'w-56',
           className
@@ -65,7 +68,7 @@ export function Sidebar({ className }: SidebarProps) {
         <div
           className={cn(
             'flex items-center gap-3 p-4',
-            'border-b border-slate-800/50',
+            'border-b border-slate-200/50 dark:border-slate-800/50',
             collapsed && 'justify-center'
           )}
         >
@@ -75,10 +78,10 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <h1 className="text-lg font-bold text-slate-100 tracking-tight">
+              <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                 HomeLab
               </h1>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest">
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                 Dashboard
               </p>
             </div>
@@ -96,8 +99,8 @@ export function Sidebar({ className }: SidebarProps) {
                 asChild
                 className={cn(
                   'w-full justify-start gap-3',
-                  'text-slate-400 hover:text-slate-100',
-                  'hover:bg-slate-800/50',
+                  'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100',
+                  'hover:bg-slate-100/50 dark:hover:bg-slate-800/50',
                   'transition-all duration-200',
                   collapsed && 'justify-center px-2'
                 )}
@@ -115,7 +118,7 @@ export function Sidebar({ className }: SidebarProps) {
               return (
                 <Tooltip key={item.name}>
                   <TooltipTrigger asChild>{button}</TooltipTrigger>
-                  <TooltipContent side="right" className="bg-slate-800 border-slate-700">
+                  <TooltipContent side="right" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                     {item.name}
                   </TooltipContent>
                 </Tooltip>
@@ -127,7 +130,7 @@ export function Sidebar({ className }: SidebarProps) {
         </nav>
 
         {/* Bottom section */}
-        <div className="p-2 border-t border-slate-800/50 space-y-1">
+        <div className="p-2 border-t border-slate-200/50 dark:border-slate-800/50 space-y-1">
           {/* Settings button */}
           {(() => {
             const Icon = settingsItem.icon;
@@ -137,8 +140,8 @@ export function Sidebar({ className }: SidebarProps) {
                 asChild
                 className={cn(
                   'w-full justify-start gap-3',
-                  'text-slate-400 hover:text-slate-100',
-                  'hover:bg-slate-800/50',
+                  'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100',
+                  'hover:bg-slate-100/50 dark:hover:bg-slate-800/50',
                   'transition-all duration-200',
                   collapsed && 'justify-center px-2'
                 )}
@@ -156,7 +159,7 @@ export function Sidebar({ className }: SidebarProps) {
               return (
                 <Tooltip>
                   <TooltipTrigger asChild>{button}</TooltipTrigger>
-                  <TooltipContent side="right" className="bg-slate-800 border-slate-700">
+                  <TooltipContent side="right" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                     {settingsItem.name}
                   </TooltipContent>
                 </Tooltip>
@@ -166,6 +169,26 @@ export function Sidebar({ className }: SidebarProps) {
             return button;
           })()}
 
+          {/* Theme toggle */}
+          {(() => {
+            if (collapsed) {
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <ThemeToggle collapsed />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                    Theme
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return <ThemeToggle />;
+          })()}
+
           {/* Collapse toggle */}
           <Button
             variant="ghost"
@@ -173,8 +196,8 @@ export function Sidebar({ className }: SidebarProps) {
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
               'w-full',
-              'text-slate-500 hover:text-slate-300',
-              'hover:bg-slate-800/50',
+              'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300',
+              'hover:bg-slate-100/50 dark:hover:bg-slate-800/50',
               collapsed && 'justify-center'
             )}
           >
@@ -217,7 +240,7 @@ export function Sidebar({ className }: SidebarProps) {
               return (
                 <Tooltip>
                   <TooltipTrigger asChild>{logoutButton}</TooltipTrigger>
-                  <TooltipContent side="right" className="bg-slate-800 border-slate-700">
+                  <TooltipContent side="right" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                     Logout
                   </TooltipContent>
                 </Tooltip>

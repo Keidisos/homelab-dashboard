@@ -9,6 +9,7 @@ export const config = {
     jellyfin: 10000,
     pterodactyl: 20000,
     storage: 60000,
+    calendar: 300000,
   },
 
   // Services disponibles

@@ -218,6 +218,35 @@ export interface UptimeKumaData {
 }
 
 // ============================================
+// CALENDAR (SONARR/RADARR) TYPES
+// ============================================
+export interface CalendarItem {
+  id: string;
+  title: string;
+  releaseDate: string;
+  type: 'movie' | 'tv';
+  posterUrl?: string;
+  overview?: string;
+  episodeTitle?: string;
+  seasonNumber?: number;
+  episodeNumber?: number;
+}
+
+export interface CalendarData {
+  items: CalendarItem[];
+}
+
+// ============================================
+// QBITTORRENT TRANSFER TYPES
+// ============================================
+export interface QBittorrentTransferInfo {
+  dl_info_speed: number;
+  up_info_speed: number;
+}
+
+export type TorrentAction = 'pause' | 'resume' | 'delete' | 'add';
+
+// ============================================
 // API RESPONSE WRAPPER
 // ============================================
 export interface ApiResponse<T> {

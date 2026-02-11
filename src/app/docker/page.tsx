@@ -24,6 +24,7 @@ import {
   Shield,
   StopCircle,
   Loader2,
+  Terminal,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ import { useAppUrls, type AppUrls } from '@/hooks/use-settings';
 import { cn } from '@/lib/utils';
 import type { DockerContainer } from '@/types';
 import type { LucideIcon } from 'lucide-react';
+import { LogsModal } from '@/components/docker/logs-modal';
 
 const containerIcons: Record<string, LucideIcon> = {
   radarr: Film,
@@ -143,11 +145,12 @@ function StatCard({
   );
 }
 
-function ContainerRow({ container, urls, onAction, isActionPending }: {
+function ContainerRow({ container, urls, onAction, isActionPending, onLogs }: {
   container: DockerContainer;
   urls: AppUrls | null;
   onAction: (containerId: string, action: ContainerAction) => void;
   isActionPending: boolean;
+  onLogs: (containerId: string, containerName: string) => void;
 }) {
   const Icon = getContainerIcon(container.name);
   const urlKey = getContainerUrlKey(container.name);
@@ -249,6 +252,20 @@ function ContainerRow({ container, urls, onAction, isActionPending }: {
 
       {/* Action Buttons - Inline */}
       <div className="flex items-center gap-1 shrink-0">
+        {/* Logs button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 p-0 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onLogs(container.id, container.name);
+          }}
+          title="View Logs"
+        >
+          <Terminal className="h-4 w-4" />
+        </Button>
         {isActionPending ? (
           <div className="w-24 flex justify-center">
             <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
@@ -381,6 +398,7 @@ export default function DockerPage() {
   const urls = useAppUrls();
   const dockerAction = useDockerAction();
   const [pendingContainerId, setPendingContainerId] = useState<string | null>(null);
+  const [logsContainer, setLogsContainer] = useState<{ id: string; name: string } | null>(null);
 
   const handleAction = (containerId: string, action: ContainerAction) => {
     setPendingContainerId(containerId);
@@ -514,6 +532,7 @@ export default function DockerPage() {
                     urls={urls}
                     onAction={handleAction}
                     isActionPending={pendingContainerId === container.id}
+                    onLogs={(id, name) => setLogsContainer({ id, name })}
                   />
                 ))}
             </div>
@@ -551,6 +570,18 @@ export default function DockerPage() {
           </Card>
         )}
       </div>
+
+      {/* Logs Modal */}
+      {logsContainer && (
+        <LogsModal
+          containerId={logsContainer.id}
+          containerName={logsContainer.name}
+          open={!!logsContainer}
+          onOpenChange={(open) => {
+            if (!open) setLogsContainer(null);
+          }}
+        />
+      )}
     </div>
   );
 }

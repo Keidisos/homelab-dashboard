@@ -1,6 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import type { ApiResponse } from '@/types';
-import { fetchInsecure, parseApiError } from '@/lib/fetch-ssl';
+import { parseApiError } from '@/lib/fetch-ssl';
+import { fetchInsecure } from '@/lib/fetch-ssl';
+import { getQBittorrentAuth } from '@/lib/qbittorrent-auth';
 
 export interface QBittorrentTorrent {
   hash: string;
@@ -28,53 +30,18 @@ interface QBTorrentRaw {
   added_on: number;
 }
 
-async function fetchQBittorrentTorrents(): Promise<QBittorrentTorrent[]> {
-  const host = process.env.QBITTORRENT_HOST;
-  const username = process.env.QBITTORRENT_USERNAME || 'admin';
-  const password = process.env.QBITTORRENT_PASSWORD || '';
+async function fetchQBittorrentTorrents(showAll: boolean): Promise<QBittorrentTorrent[]> {
+  const { host, cookie } = await getQBittorrentAuth();
 
-  if (!host) {
-    throw new Error('qBittorrent configuration missing');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (cookie) {
+    headers['Cookie'] = cookie;
   }
 
-  // Login to qBittorrent
-  const loginRes = await fetchInsecure(`${host}/api/v2/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`,
-  });
-
-  if (!loginRes.ok) {
-    throw new Error(`qBittorrent login failed: ${loginRes.status}`);
-  }
-
-  // Get cookies from response
-  const cookies = loginRes.headers.get('set-cookie') || '';
-  const sidMatch = cookies.match(/SID=([^;]+)/);
-  const sid = sidMatch ? sidMatch[1] : '';
-
-  if (!sid) {
-    // Try without auth (if web UI has no password)
-    const torrentsRes = await fetchInsecure(`${host}/api/v2/torrents/info?filter=all`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (torrentsRes.ok) {
-      return await torrentsRes.json();
-    }
-    throw new Error('qBittorrent authentication failed');
-  }
-
-  // Fetch torrents with active downloads/uploads
   const torrentsRes = await fetchInsecure(`${host}/api/v2/torrents/info?filter=all`, {
-    headers: {
-      Cookie: `SID=${sid}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
   });
 
   if (!torrentsRes.ok) {
@@ -82,6 +49,10 @@ async function fetchQBittorrentTorrents(): Promise<QBittorrentTorrent[]> {
   }
 
   const torrents: QBTorrentRaw[] = await torrentsRes.json();
+
+  if (showAll) {
+    return torrents.sort((a, b) => b.added_on - a.added_on);
+  }
 
   // Return only active torrents (downloading, uploading, or queued)
   const activeStates = ['downloading', 'uploading', 'stalledDL', 'stalledUP', 'queuedDL', 'queuedUP', 'checkingDL', 'checkingUP', 'forcedDL', 'forcedUP', 'metaDL'];
@@ -92,9 +63,10 @@ async function fetchQBittorrentTorrents(): Promise<QBittorrentTorrent[]> {
     .slice(0, 15);
 }
 
-export async function GET(): Promise<NextResponse<ApiResponse<{ torrents: QBittorrentTorrent[] }>>> {
+export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<{ torrents: QBittorrentTorrent[] }>>> {
   try {
-    const torrents = await fetchQBittorrentTorrents();
+    const showAll = request.nextUrl.searchParams.get('all') === 'true';
+    const torrents = await fetchQBittorrentTorrents(showAll);
 
     return NextResponse.json({
       success: true,

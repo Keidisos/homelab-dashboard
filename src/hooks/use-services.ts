@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiResponse, ProxmoxData, DockerContainer, JellyfinData, PterodactylData, StorageData, JellyseerrData, QBittorrentData, UptimeKumaData } from '@/types';
+import type { ApiResponse, ProxmoxData, DockerContainer, JellyfinData, PterodactylData, StorageData, JellyseerrData, QBittorrentData, UptimeKumaData, CalendarData, QBittorrentTransferInfo, TorrentAction } from '@/types';
 import { config } from '@/config/dashboard';
 
 // ============================================
@@ -186,5 +186,91 @@ export function useProxmoxAction() {
       // Invalidate proxmox query to refresh data
       queryClient.invalidateQueries({ queryKey: ['proxmox'] });
     },
+  });
+}
+
+// ============================================
+// CALENDAR HOOK (Sonarr/Radarr)
+// ============================================
+export function useCalendar() {
+  return useQuery<ApiResponse<CalendarData>>({
+    queryKey: ['calendar'],
+    queryFn: async () => {
+      const response = await fetch('/api/calendar');
+      if (!response.ok) throw new Error('Failed to fetch calendar data');
+      return response.json();
+    },
+    refetchInterval: config.polling.calendar,
+  });
+}
+
+// ============================================
+// QBITTORRENT TRANSFER HOOK
+// ============================================
+export function useQBittorrentTransfer() {
+  return useQuery<ApiResponse<QBittorrentTransferInfo>>({
+    queryKey: ['qbittorrent-transfer'],
+    queryFn: async () => {
+      const response = await fetch('/api/qbittorrent/transfer');
+      if (!response.ok) throw new Error('Failed to fetch transfer info');
+      return response.json();
+    },
+    refetchInterval: config.polling.docker,
+  });
+}
+
+// ============================================
+// QBITTORRENT ALL TORRENTS HOOK
+// ============================================
+export function useQBittorrentAll() {
+  return useQuery<ApiResponse<QBittorrentData>>({
+    queryKey: ['qbittorrent-all'],
+    queryFn: async () => {
+      const response = await fetch('/api/qbittorrent?all=true');
+      if (!response.ok) throw new Error('Failed to fetch qBittorrent data');
+      return response.json();
+    },
+    refetchInterval: config.polling.docker,
+  });
+}
+
+// ============================================
+// QBITTORRENT ACTION MUTATION
+// ============================================
+export function useQBittorrentAction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ action, hash, magnetUrl }: { action: TorrentAction; hash?: string; magnetUrl?: string }) => {
+      const response = await fetch('/api/qbittorrent/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, hash, magnetUrl }),
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Action failed');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['qbittorrent'] });
+      queryClient.invalidateQueries({ queryKey: ['qbittorrent-all'] });
+      queryClient.invalidateQueries({ queryKey: ['qbittorrent-transfer'] });
+    },
+  });
+}
+
+// ============================================
+// DOCKER LOGS HOOK
+// ============================================
+export function useDockerLogs(containerId: string, tail: number = 100, enabled: boolean = false) {
+  return useQuery<ApiResponse<{ logs: string; containerId: string; containerName: string }>>({
+    queryKey: ['docker-logs', containerId, tail],
+    queryFn: async () => {
+      const response = await fetch(`/api/docker/logs?containerId=${containerId}&tail=${tail}`);
+      if (!response.ok) throw new Error('Failed to fetch container logs');
+      return response.json();
+    },
+    enabled,
+    refetchInterval: false,
   });
 }
