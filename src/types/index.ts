@@ -244,7 +244,7 @@ export interface QBittorrentTransferInfo {
   up_info_speed: number;
 }
 
-export type TorrentAction = 'pause' | 'resume' | 'delete' | 'add';
+export type TorrentAction = 'pause' | 'resume' | 'delete';
 
 // ============================================
 // API RESPONSE WRAPPER

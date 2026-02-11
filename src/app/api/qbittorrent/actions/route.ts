@@ -5,7 +5,7 @@ import { getQBittorrentAuth } from '@/lib/qbittorrent-auth';
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<{ message: string }>>> {
   try {
-    const { action, hash, magnetUrl } = await request.json();
+    const { action, hash } = await request.json();
 
     if (!action) {
       return NextResponse.json(
@@ -41,11 +41,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         if (!hash) throw new Error('Hash is required for delete action');
         url = `${host}/api/v2/torrents/delete`;
         body = `hashes=${hash}&deleteFiles=false`;
-        break;
-      case 'add':
-        if (!magnetUrl) throw new Error('Magnet URL is required for add action');
-        url = `${host}/api/v2/torrents/add`;
-        body = `urls=${encodeURIComponent(magnetUrl)}`;
         break;
       default:
         return NextResponse.json(

@@ -7,7 +7,6 @@ import {
   Play,
   Pause,
   Trash2,
-  Plus,
   ArrowDown,
   ArrowUp,
   Loader2,
@@ -276,26 +275,12 @@ export default function QBittorrentPage() {
   const { data: transferData } = useQBittorrentTransfer();
   const qbAction = useQBittorrentAction();
   const [pendingHash, setPendingHash] = useState<string | null>(null);
-  const [magnetInput, setMagnetInput] = useState('');
-  const [isAdding, setIsAdding] = useState(false);
 
   const handleAction = (action: 'pause' | 'resume' | 'delete', hash: string) => {
     setPendingHash(hash);
     qbAction.mutate(
       { action, hash },
       { onSettled: () => setPendingHash(null) }
-    );
-  };
-
-  const handleAddMagnet = () => {
-    if (!magnetInput.trim()) return;
-    setIsAdding(true);
-    qbAction.mutate(
-      { action: 'add', magnetUrl: magnetInput.trim() },
-      {
-        onSuccess: () => setMagnetInput(''),
-        onSettled: () => setIsAdding(false),
-      }
     );
   };
 
@@ -343,34 +328,6 @@ export default function QBittorrentPage() {
               </div>
             )}
           </div>
-
-          {/* Add Magnet */}
-          {data?.success && (
-            <div className="flex gap-3 mt-6">
-              <input
-                type="text"
-                placeholder="Paste magnet link..."
-                value={magnetInput}
-                onChange={(e) => setMagnetInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddMagnet()}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900/60 dark:bg-slate-900/60 bg-white/60 backdrop-blur-sm border border-slate-700/50 dark:border-slate-700/50 border-slate-300/50 text-sm text-slate-200 dark:text-slate-200 text-slate-700 placeholder-slate-500 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30"
-              />
-              <Button
-                onClick={handleAddMagnet}
-                disabled={!magnetInput.trim() || isAdding}
-                className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-xl px-6"
-              >
-                {isAdding ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
 
           {/* Stats */}
           {data?.success && (

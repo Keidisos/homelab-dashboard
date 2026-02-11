@@ -241,11 +241,11 @@ export function useQBittorrentAction() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ action, hash, magnetUrl }: { action: TorrentAction; hash?: string; magnetUrl?: string }) => {
+    mutationFn: async ({ action, hash }: { action: TorrentAction; hash: string }) => {
       const response = await fetch('/api/qbittorrent/actions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, hash, magnetUrl }),
+        body: JSON.stringify({ action, hash }),
       });
       const data = await response.json();
       if (!data.success) throw new Error(data.error || 'Action failed');
