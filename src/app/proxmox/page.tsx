@@ -1,23 +1,168 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Activity, Play, StopCircle, RotateCw, Power, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useProxmox, useProxmoxAction, type VMAction, type VMType } from '@/hooks/use-services';
+import { useProxmox, useProxmoxAction, useMetricsHistory, type VMAction, type VMType, type MetricsRange } from '@/hooks/use-services';
 import { cn } from '@/lib/utils';
 import type { ProxmoxNode, ProxmoxVM } from '@/types';
 import {
   ResponsiveContainer,
   Area,
   AreaChart,
+  XAxis,
   YAxis,
+  CartesianGrid,
+  Tooltip,
 } from 'recharts';
 
-const MAX_HISTORY_POINTS = 30;
+const RANGE_OPTIONS: { value: MetricsRange; label: string }[] = [
+  { value: '1h', label: '1H' },
+  { value: '6h', label: '6H' },
+  { value: '24h', label: '24H' },
+  { value: '7d', label: '7D' },
+];
+
+function formatTimeLabel(timestamp: number, range: MetricsRange): string {
+  const date = new Date(timestamp);
+  if (range === '7d') {
+    return date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+  }
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function HistoryChart({ nodeId }: { nodeId?: string }) {
+  const [range, setRange] = useState<MetricsRange>('1h');
+  const { data, isLoading } = useMetricsHistory(range, nodeId);
+
+  const points = data?.data?.points || [];
+  const chartData = points.map(p => ({
+    time: p.timestamp,
+    cpu: p.cpu_percent,
+    ram: p.ram_percent,
+    label: formatTimeLabel(p.timestamp, range),
+  }));
+
+  return (
+    <Card className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-cyan-400" />
+            Performance History
+          </CardTitle>
+          <div className="flex items-center gap-1 bg-slate-800/60 rounded-lg p-0.5">
+            {RANGE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setRange(opt.value)}
+                className={cn(
+                  'px-3 py-1 rounded-md text-xs font-medium transition-all',
+                  range === opt.value
+                    ? 'bg-cyan-500/20 text-cyan-400'
+                    : 'text-slate-500 hover:text-slate-300'
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading && chartData.length === 0 ? (
+          <div className="h-[250px] flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="h-[250px] flex items-center justify-center">
+            <p className="text-sm text-slate-500">No data yet — metrics are recorded every ~30s</p>
+          </div>
+        ) : (
+          <div className="h-[250px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="cpuGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#fb923c" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#fb923c" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="ramGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#60a5fa" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#60a5fa" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval="preserveStartEnd"
+                  minTickGap={50}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fontSize: 10, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => `${v}%`}
+                  width={40}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                  }}
+                  labelStyle={{ color: '#94a3b8' }}
+                  formatter={(value, name) => [
+                    `${Number(value).toFixed(1)}%`,
+                    name === 'cpu' ? 'CPU' : 'RAM',
+                  ]}
+                  labelFormatter={(label) => String(label)}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="cpu"
+                  stroke="#fb923c"
+                  strokeWidth={2}
+                  fill="url(#cpuGrad)"
+                  isAnimationActive={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="ram"
+                  stroke="#60a5fa"
+                  strokeWidth={2}
+                  fill="url(#ramGrad)"
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-6 mt-3">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-0.5 bg-orange-400 rounded" />
+            <span className="text-xs text-slate-400">CPU</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-0.5 bg-blue-400 rounded" />
+            <span className="text-xs text-slate-400">RAM</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 function formatBytes(bytes: number): string {
   const gb = bytes / (1024 * 1024 * 1024);
@@ -33,97 +178,6 @@ function formatUptime(seconds: number): string {
   if (days > 0) return `${days}d ${hours}h`;
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;
-}
-
-function MiniChart({
-  data,
-  dataKey,
-  color,
-  maxValue = 100
-}: {
-  data: Array<{ value: number; time: number }>;
-  dataKey: string;
-  color: string;
-  maxValue?: number;
-}) {
-  return (
-    <ResponsiveContainer width="100%" height={60}>
-      <AreaChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-        <defs>
-          <linearGradient id={`gradient-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-            <stop offset="95%" stopColor={color} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <YAxis domain={[0, maxValue]} hide />
-        <Area
-          type="monotone"
-          dataKey="value"
-          stroke={color}
-          strokeWidth={2}
-          fill={`url(#gradient-${dataKey})`}
-          isAnimationActive={false}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  unit,
-  icon: Icon,
-  color,
-  history,
-  maxValue = 100,
-}: {
-  title: string;
-  value: number;
-  unit: string;
-  icon: typeof Cpu;
-  color: string;
-  history: Array<{ value: number; time: number }>;
-  maxValue?: number;
-}) {
-  const colorClasses: Record<string, string> = {
-    orange: 'text-orange-400 from-orange-500/20 to-orange-600/10 border-orange-500/30',
-    blue: 'text-blue-400 from-blue-500/20 to-blue-600/10 border-blue-500/30',
-    red: 'text-red-400 from-red-500/20 to-red-600/10 border-red-500/30',
-    emerald: 'text-emerald-400 from-emerald-500/20 to-emerald-600/10 border-emerald-500/30',
-  };
-
-  const strokeColors: Record<string, string> = {
-    orange: '#fb923c',
-    blue: '#60a5fa',
-    red: '#f87171',
-    emerald: '#34d399',
-  };
-
-  return (
-    <Card className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className={cn(
-              'flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br border',
-              colorClasses[color]
-            )}>
-              <Icon className={cn('h-4 w-4', colorClasses[color].split(' ')[0])} />
-            </div>
-            <span className="text-sm text-slate-400">{title}</span>
-          </div>
-          <div className="text-right">
-            <span className={cn('text-2xl font-bold font-mono', colorClasses[color].split(' ')[0])}>
-              {value.toFixed(1)}
-            </span>
-            <span className="text-sm text-slate-500 ml-1">{unit}</span>
-          </div>
-        </div>
-        <MiniChart data={history} dataKey={title} color={strokeColors[color]} maxValue={maxValue} />
-      </CardContent>
-    </Card>
-  );
 }
 
 function NodeCard({ node }: { node: ProxmoxNode }) {
@@ -338,8 +392,6 @@ export default function ProxmoxPage() {
   const { data: proxmoxData, isLoading: proxmoxLoading, error: proxmoxError } = useProxmox();
   const proxmoxAction = useProxmoxAction();
 
-  const [cpuHistory, setCpuHistory] = useState<Array<{ value: number; time: number }>>([]);
-  const [ramHistory, setRamHistory] = useState<Array<{ value: number; time: number }>>([]);
   const [pendingVmId, setPendingVmId] = useState<string | null>(null);
 
   const handleAction = (node: string, vmid: number, type: VMType, action: VMAction) => {
@@ -351,31 +403,6 @@ export default function ProxmoxPage() {
       }
     );
   };
-
-  // Update history when new data arrives
-  useEffect(() => {
-    if (proxmoxData?.data?.nodes?.[0]) {
-      const node = proxmoxData.data.nodes[0];
-      const cpuPercent = node.cpu * 100;
-      const memPercent = (node.mem / node.maxmem) * 100;
-      const now = Date.now();
-
-      setCpuHistory(prev => {
-        const newHistory = [...prev, { value: cpuPercent, time: now }];
-        return newHistory.slice(-MAX_HISTORY_POINTS);
-      });
-
-      setRamHistory(prev => {
-        const newHistory = [...prev, { value: memPercent, time: now }];
-        return newHistory.slice(-MAX_HISTORY_POINTS);
-      });
-    }
-  }, [proxmoxData]);
-
-  const currentCpu = proxmoxData?.data?.nodes?.[0]?.cpu ? proxmoxData.data.nodes[0].cpu * 100 : 0;
-  const currentRam = proxmoxData?.data?.nodes?.[0]
-    ? (proxmoxData.data.nodes[0].mem / proxmoxData.data.nodes[0].maxmem) * 100
-    : 0;
 
   const vms = proxmoxData?.data?.vms || [];
   const runningVms = vms.filter(vm => vm.status === 'running' && vm.type === 'qemu');
@@ -415,32 +442,16 @@ export default function ProxmoxPage() {
 
         {proxmoxData?.success && proxmoxData.data && (
           <>
-            {/* Node Card with Stats Graphs side by side */}
+            {/* Node Cards */}
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Node Card - Left side */}
               {proxmoxData.data.nodes.map((node) => (
                 <NodeCard key={node.node} node={node} />
               ))}
+            </section>
 
-              {/* Stats Cards stacked - Right side */}
-              <div className="flex flex-col gap-4">
-                <StatCard
-                  title="CPU"
-                  value={currentCpu}
-                  unit="%"
-                  icon={Cpu}
-                  color="orange"
-                  history={cpuHistory}
-                />
-                <StatCard
-                  title="RAM"
-                  value={currentRam}
-                  unit="%"
-                  icon={MemoryStick}
-                  color="blue"
-                  history={ramHistory}
-                />
-              </div>
+            {/* Performance History Chart */}
+            <section>
+              <HistoryChart nodeId={nodeName} />
             </section>
 
             {/* VMs & Containers List */}

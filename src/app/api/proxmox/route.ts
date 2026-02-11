@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { ProxmoxNode, ProxmoxVM, ApiResponse, ProxmoxData } from '@/types';
 import { fetchInsecure, parseApiError } from '@/lib/fetch-ssl';
+import { recordMetric } from '@/lib/metrics-db';
 
 async function proxmoxFetch<T>(endpoint: string): Promise<T> {
   const host = process.env.PROXMOX_HOST;
@@ -126,6 +127,15 @@ export async function GET(): Promise<NextResponse<ApiResponse<ProxmoxData>>> {
 
     // Get VMs from all discovered nodes
     const vms = await getAllVMs(nodeNames);
+
+    // Record metrics for persistent history
+    for (const node of nodes) {
+      if (node.status === 'online') {
+        const cpuPercent = node.cpu * 100;
+        const ramPercent = (node.mem / node.maxmem) * 100;
+        recordMetric(node.node, cpuPercent, ramPercent);
+      }
+    }
 
     return NextResponse.json({
       success: true,

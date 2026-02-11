@@ -1,6 +1,9 @@
 # Build stage
 FROM node:20-alpine AS builder
 
+# Install build tools for native modules (better-sqlite3)
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 # Copy package files

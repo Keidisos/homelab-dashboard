@@ -274,3 +274,41 @@ export function useDockerLogs(containerId: string, tail: number = 100, enabled: 
     refetchInterval: false,
   });
 }
+
+// ============================================
+// METRICS HISTORY HOOK
+// ============================================
+export type MetricsRange = '1h' | '6h' | '24h' | '7d';
+
+interface MetricsPoint {
+  timestamp: number;
+  cpu_percent: number;
+  ram_percent: number;
+}
+
+interface MetricsData {
+  nodeId: string;
+  range: string;
+  points: MetricsPoint[];
+}
+
+export function useMetricsHistory(range: MetricsRange, nodeId?: string) {
+  const refreshIntervals: Record<MetricsRange, number> = {
+    '1h': 30000,
+    '6h': 60000,
+    '24h': 120000,
+    '7d': 300000,
+  };
+
+  return useQuery<ApiResponse<MetricsData>>({
+    queryKey: ['metrics-history', range, nodeId],
+    queryFn: async () => {
+      const params = new URLSearchParams({ range });
+      if (nodeId) params.set('node', nodeId);
+      const response = await fetch(`/api/metrics?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch metrics history');
+      return response.json();
+    },
+    refetchInterval: refreshIntervals[range],
+  });
+}
