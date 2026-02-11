@@ -37,9 +37,8 @@ const navItems: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard, color: 'text-cyan-400' },
   { name: 'Proxmox', href: '/proxmox', icon: Server, color: 'text-orange-400' },
   { name: 'Docker', href: '/docker', icon: Container, color: 'text-blue-400' },
-  { name: 'Jellyfin', href: '/jellyfin', icon: Tv, color: 'text-purple-400' },
+  { name: 'Medias', href: '/jellyfin', icon: Tv, color: 'text-purple-400' },
   { name: 'Gaming', href: '/gaming', icon: Gamepad2, color: 'text-green-400' },
-  { name: 'Torrents', href: '/qbittorrent', icon: Download, color: 'text-amber-400' },
 ];
 
 const settingsItem: NavItem = { name: 'Settings', href: '/settings', icon: Settings, color: 'text-slate-400' };
