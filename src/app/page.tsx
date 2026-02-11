@@ -50,7 +50,6 @@ import { cn } from '@/lib/utils';
 import { useProxmox, useDocker, useJellyfin, usePterodactyl } from '@/hooks/use-services';
 import { useQuickLinks } from '@/hooks/use-settings';
 import { UptimeKumaSection } from '@/components/dashboard/uptime-kuma-section';
-import { ReleaseCalendarSection } from '@/components/dashboard/release-calendar-section';
 import type { LucideIcon } from 'lucide-react';
 import type { QuickLink } from '@/hooks/use-settings';
 
@@ -431,9 +430,6 @@ export default function DashboardPage() {
       <div className="p-6 space-y-8">
         {/* Uptime Monitoring Section */}
         <UptimeKumaSection />
-
-        {/* Release Calendar */}
-        <ReleaseCalendarSection />
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

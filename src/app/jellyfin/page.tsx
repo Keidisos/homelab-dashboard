@@ -19,14 +19,15 @@ import {
   Users,
   Activity,
   Radio,
+  Calendar,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useJellyfin, useJellyseerr, useQBittorrent } from '@/hooks/use-services';
+import { useJellyfin, useJellyseerr, useQBittorrent, useCalendar } from '@/hooks/use-services';
 import { cn } from '@/lib/utils';
-import type { JellyfinSession, JellyseerrRequest, QBittorrentTorrent } from '@/types';
+import type { JellyfinSession, JellyseerrRequest, QBittorrentTorrent, CalendarItem } from '@/types';
 import type { LucideIcon } from 'lucide-react';
 
 function getDeviceIcon(client: string): LucideIcon {
@@ -285,6 +286,75 @@ function RequestCard({ request, statusLabels }: { request: JellyseerrRequest; st
   );
 }
 
+function formatReleaseDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  if (date.toDateString() === now.toDateString()) return 'Today';
+  if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow';
+
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function CalendarListItem({ item }: { item: CalendarItem }) {
+  const isMovie = item.type === 'movie';
+  const posterUrl = item.posterUrl || null;
+
+  return (
+    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-800/30 transition-colors">
+      {/* Poster */}
+      <div className="w-10 h-14 shrink-0 bg-slate-800 rounded overflow-hidden">
+        {posterUrl ? (
+          <img
+            src={posterUrl}
+            alt={item.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            {isMovie ? (
+              <Film className="h-4 w-4 text-slate-600" />
+            ) : (
+              <Tv2 className="h-4 w-4 text-slate-600" />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-slate-100 truncate">
+          {item.title}
+        </p>
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <span className={isMovie ? 'text-amber-400' : 'text-cyan-400'}>
+            {isMovie ? 'Film' : 'Série'}
+          </span>
+          {item.episodeTitle && (
+            <>
+              <span>•</span>
+              <span className="truncate">
+                S{String(item.seasonNumber).padStart(2, '0')}E{String(item.episodeNumber).padStart(2, '0')} - {item.episodeTitle}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Release Date */}
+      <Badge variant="outline" className={cn(
+        'text-[10px] border shrink-0 px-1.5 py-0.5',
+        'bg-pink-500/20 text-pink-400 border-pink-500/50'
+      )}>
+        {formatReleaseDate(item.releaseDate)}
+      </Badge>
+    </div>
+  );
+}
+
 function TorrentRow({ torrent }: { torrent: QBittorrentTorrent }) {
   const progress = Math.round(torrent.progress * 100);
   const isDownloading = torrent.dlspeed > 0;
@@ -421,6 +491,7 @@ export default function JellyfinPage() {
   const { data: jellyfinData, isLoading: jellyfinLoading, error: jellyfinError } = useJellyfin();
   const { data: jellyseerrData, isLoading: jellyseerrLoading, error: jellyseerrError } = useJellyseerr();
   const { data: qbittorrentData, isLoading: qbittorrentLoading, error: qbittorrentError } = useQBittorrent();
+  const { data: calendarData, isLoading: calendarLoading, error: calendarError } = useCalendar();
 
   const activeSessions = jellyfinData?.data?.sessions || [];
   const playingCount = activeSessions.filter((s) => !s.playState?.isPaused).length;
@@ -432,6 +503,8 @@ export default function JellyfinPage() {
 
   const torrents = qbittorrentData?.data?.torrents || [];
   const downloadingCount = torrents.filter((t) => t.dlspeed > 0).length;
+
+  const calendarItems = calendarData?.data?.items || [];
 
   return (
     <div className="min-h-screen">
@@ -657,6 +730,63 @@ export default function JellyfinPage() {
             </>
           )}
         </section>
+
+        {/* Upcoming Releases Section */}
+        {!calendarError && !(calendarData && !calendarData.success) && (
+          <section className="space-y-4">
+            <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-pink-400" />
+              Upcoming Releases
+              {calendarItems.length > 0 && (
+                <span className="text-slate-600 font-normal normal-case">({calendarItems.length})</span>
+              )}
+            </h2>
+
+            {calendarLoading && (
+              <Card className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
+                <CardContent className="p-4 space-y-2">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3 p-2">
+                      <Skeleton className="h-14 w-10 rounded bg-slate-800" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-3/4 bg-slate-800" />
+                        <Skeleton className="h-3 w-1/2 bg-slate-800" />
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {calendarData?.success && (
+              <>
+                {calendarItems.length === 0 ? (
+                  <Card className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
+                    <CardContent className="p-12 text-center">
+                      <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-slate-800/50 mx-auto mb-4">
+                        <Calendar className="h-8 w-8 text-slate-500" />
+                      </div>
+                      <h3 className="text-lg font-medium text-slate-300 mb-2">No Upcoming Releases</h3>
+                      <p className="text-sm text-slate-500">
+                        No upcoming releases in the next 14 days
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
+                    <CardContent className="p-2 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+                      <div className="divide-y divide-slate-800/50">
+                        {calendarItems.map((item) => (
+                          <CalendarListItem key={item.id} item={item} />
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+          </section>
+        )}
 
         {/* qBittorrent Downloads Section */}
         <section className="space-y-4">
