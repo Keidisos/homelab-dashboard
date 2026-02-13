@@ -10,6 +10,7 @@ export const config = {
     pterodactyl: 20000,
     storage: 60000,
     calendar: 300000,
+    homeassistant: 10000,
   },
 
   // Services disponibles

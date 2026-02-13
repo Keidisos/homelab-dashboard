@@ -247,6 +247,38 @@ export interface QBittorrentTransferInfo {
 export type TorrentAction = 'pause' | 'resume' | 'delete';
 
 // ============================================
+// HOME ASSISTANT TYPES
+// ============================================
+export interface HomeAssistantEntity {
+  entity_id: string;
+  domain: 'light' | 'switch' | 'sensor';
+  state: string;
+  friendly_name: string;
+  brightness?: number;
+  power_consumption?: number;
+  last_changed: string;
+}
+
+export interface HomeAssistantArea {
+  area_id: string;
+  area_name: string;
+  entities: HomeAssistantEntity[];
+}
+
+export interface HomeAssistantData {
+  areas: HomeAssistantArea[];
+  summary: {
+    totalLights: number;
+    lightsOn: number;
+    totalSwitches: number;
+    switchesOn: number;
+    totalPowerConsumption: number;
+  };
+}
+
+export type HomeAssistantAction = 'turn_on' | 'turn_off' | 'toggle';
+
+// ============================================
 // API RESPONSE WRAPPER
 // ============================================
 export interface ApiResponse<T> {

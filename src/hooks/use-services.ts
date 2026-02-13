@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ApiResponse, ProxmoxData, DockerContainer, JellyfinData, PterodactylData, StorageData, JellyseerrData, QBittorrentData, UptimeKumaData, CalendarData, QBittorrentTransferInfo, TorrentAction } from '@/types';
+import type { ApiResponse, ProxmoxData, DockerContainer, JellyfinData, PterodactylData, StorageData, JellyseerrData, QBittorrentData, UptimeKumaData, CalendarData, QBittorrentTransferInfo, TorrentAction, HomeAssistantData, HomeAssistantAction } from '@/types';
 import { config } from '@/config/dashboard';
 
 // ============================================
@@ -310,5 +310,51 @@ export function useMetricsHistory(range: MetricsRange, nodeId?: string) {
       return response.json();
     },
     refetchInterval: refreshIntervals[range],
+  });
+}
+
+// ============================================
+// HOME ASSISTANT HOOK
+// ============================================
+export function useHomeAssistant() {
+  return useQuery<ApiResponse<HomeAssistantData>>({
+    queryKey: ['homeassistant'],
+    queryFn: async () => {
+      const response = await fetch('/api/homeassistant');
+      if (!response.ok) throw new Error('Failed to fetch Home Assistant data');
+      return response.json();
+    },
+    refetchInterval: config.polling.homeassistant,
+  });
+}
+
+// ============================================
+// HOME ASSISTANT ACTION MUTATION
+// ============================================
+export function useHomeAssistantAction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      entity_id,
+      action,
+      brightness,
+    }: {
+      entity_id: string;
+      action: HomeAssistantAction;
+      brightness?: number;
+    }) => {
+      const response = await fetch('/api/homeassistant/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entity_id, action, brightness }),
+      });
+      const data = await response.json();
+      if (!data.success) throw new Error(data.error || 'Action failed');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['homeassistant'] });
+    },
   });
 }

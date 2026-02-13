@@ -15,6 +15,7 @@ import {
   Activity,
   LogOut,
   Download,
+  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { name: 'Docker', href: '/docker', icon: Container, color: 'text-blue-400' },
   { name: 'Medias', href: '/jellyfin', icon: Tv, color: 'text-purple-400' },
   { name: 'Gaming', href: '/gaming', icon: Gamepad2, color: 'text-green-400' },
+  { name: 'Domotique', href: '/homeassistant', icon: Home, color: 'text-sky-400' },
 ];
 
 const settingsItem: NavItem = { name: 'Settings', href: '/settings', icon: Settings, color: 'text-slate-400' };

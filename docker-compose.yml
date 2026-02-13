@@ -52,6 +52,10 @@ services:
       # Uptime Kuma
       - UPTIME_KUMA_HOST=${UPTIME_KUMA_HOST}
       - UPTIME_KUMA_STATUS_PAGE=${UPTIME_KUMA_STATUS_PAGE:-default}
+
+      # Home Assistant
+      - HOMEASSISTANT_HOST=${HOMEASSISTANT_HOST}
+      - HOMEASSISTANT_TOKEN=${HOMEASSISTANT_TOKEN}
     networks:
       - homelab
 
