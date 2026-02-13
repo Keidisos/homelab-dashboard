@@ -117,7 +117,8 @@ export async function GET(): Promise<NextResponse<ApiResponse<HomeAssistantData>
       // Check if it's a temperature sensor (standalone entity)
       const unit = s.attributes?.unit_of_measurement as string | undefined;
       const deviceClass = s.attributes?.device_class as string | undefined;
-      if (deviceClass === 'temperature' || unit === '°C' || unit === '°F') {
+      const tempMatch = matchSensorToDevice(s.entity_id, TEMPERATURE_SUFFIXES);
+      if (deviceClass === 'temperature' || unit === '°C' || unit === '°F' || tempMatch) {
         temperatureSensors.push(s);
       }
     }
