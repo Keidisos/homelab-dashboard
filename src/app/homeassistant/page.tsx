@@ -11,6 +11,8 @@ import {
   Loader2,
   Sun,
   MapPin,
+  Thermometer,
+  BatteryCharging,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -60,7 +62,76 @@ function StatCard({
   );
 }
 
-// --- EntityCard ---
+// --- Temperature Sensor Card ---
+function TemperatureCard({ entity }: { entity: HomeAssistantEntity }) {
+  const temp = entity.temperature;
+  const unit = entity.unit_of_measurement || '°C';
+
+  // Color based on temperature
+  const getTempColor = (t: number | undefined) => {
+    if (t === undefined) return 'text-slate-400';
+    if (t >= 28) return 'text-red-400';
+    if (t >= 22) return 'text-amber-400';
+    if (t >= 16) return 'text-emerald-400';
+    return 'text-blue-400';
+  };
+
+  const getTempGradient = (t: number | undefined) => {
+    if (t === undefined) return 'from-slate-800/50 to-slate-900/30 border-slate-700/50';
+    if (t >= 28) return 'from-red-500/15 to-orange-600/10 border-red-500/30';
+    if (t >= 22) return 'from-amber-500/15 to-orange-600/10 border-amber-500/30';
+    if (t >= 16) return 'from-emerald-500/15 to-teal-600/10 border-emerald-500/30';
+    return 'from-blue-500/15 to-cyan-600/10 border-blue-500/30';
+  };
+
+  const getTempIconGradient = (t: number | undefined) => {
+    if (t === undefined) return 'bg-slate-800/80 border-slate-700/50';
+    if (t >= 28) return 'bg-gradient-to-br from-red-500 to-orange-600 border-transparent shadow-md';
+    if (t >= 22) return 'bg-gradient-to-br from-amber-500 to-orange-600 border-transparent shadow-md';
+    if (t >= 16) return 'bg-gradient-to-br from-emerald-500 to-teal-600 border-transparent shadow-md';
+    return 'bg-gradient-to-br from-blue-500 to-cyan-600 border-transparent shadow-md';
+  };
+
+  return (
+    <Card className={cn(
+      'bg-gradient-to-br backdrop-blur-xl border transition-all duration-300',
+      getTempGradient(temp),
+      'hover:shadow-xl hover:scale-[1.02]'
+    )}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              'flex items-center justify-center h-10 w-10 rounded-lg border',
+              getTempIconGradient(temp)
+            )}>
+              <Thermometer className={cn('h-5 w-5', temp !== undefined ? 'text-white' : 'text-slate-500')} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium truncate text-slate-100">
+                {entity.friendly_name}
+              </p>
+              <Badge
+                variant="outline"
+                className="text-[10px] mt-1 border bg-slate-500/20 text-slate-400 border-slate-500/50"
+              >
+                Capteur
+              </Badge>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className={cn('text-2xl font-bold font-mono', getTempColor(temp))}>
+              {temp !== undefined ? temp.toFixed(1) : '--'}
+            </p>
+            <p className="text-xs text-slate-500">{unit}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// --- EntityCard (lights & switches) ---
 function EntityCard({
   entity,
   onToggle,
@@ -76,7 +147,6 @@ function EntityCard({
     ? Math.round((entity.brightness / 255) * 100)
     : undefined;
 
-  const Icon = isLight ? Lightbulb : Plug;
   const gradientOn = isLight
     ? 'from-amber-500/20 to-yellow-600/10 border-amber-500/30'
     : 'from-sky-500/20 to-teal-600/10 border-sky-500/30';
@@ -97,7 +167,10 @@ function EntityCard({
                 ? `bg-gradient-to-br ${isLight ? 'from-amber-500 to-yellow-600' : 'from-sky-500 to-teal-600'} border-transparent shadow-md`
                 : 'bg-slate-800/80 border-slate-700/50'
             )}>
-              <Icon className={cn('h-5 w-5', isOn ? 'text-white' : 'text-slate-500')} />
+              {isLight
+                ? <Lightbulb className={cn('h-5 w-5', isOn ? 'text-white' : 'text-slate-500')} />
+                : <Plug className={cn('h-5 w-5', isOn ? 'text-white' : 'text-slate-500')} />
+              }
             </div>
             <div className="min-w-0">
               <p className={cn(
@@ -155,11 +228,21 @@ function EntityCard({
           </div>
         )}
 
-        {/* Power consumption (switches/plugs) */}
-        {entity.power_consumption !== undefined && entity.power_consumption > 0 && (
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-400">
-            <Zap className="h-3 w-3 text-amber-400" />
-            <span className="font-mono">{entity.power_consumption.toFixed(1)} W</span>
+        {/* Power consumption & monthly energy */}
+        {(entity.power_consumption !== undefined || entity.monthly_energy !== undefined) && (
+          <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
+            {entity.power_consumption !== undefined && entity.power_consumption > 0 && (
+              <span className="flex items-center gap-1">
+                <Zap className="h-3 w-3 text-amber-400" />
+                <span className="font-mono">{entity.power_consumption.toFixed(1)} W</span>
+              </span>
+            )}
+            {entity.monthly_energy !== undefined && entity.monthly_energy > 0 && (
+              <span className="flex items-center gap-1">
+                <BatteryCharging className="h-3 w-3 text-emerald-400" />
+                <span className="font-mono">{entity.monthly_energy.toFixed(1)} kWh/mois</span>
+              </span>
+            )}
           </div>
         )}
       </CardContent>
@@ -177,7 +260,8 @@ function AreaSection({
   onToggle: (entityId: string) => void;
   pendingEntityId: string | null;
 }) {
-  const onCount = area.entities.filter((e) => e.state === 'on').length;
+  const controllable = area.entities.filter((e) => e.domain !== 'sensor');
+  const onCount = controllable.filter((e) => e.state === 'on').length;
 
   return (
     <section className="space-y-4">
@@ -185,23 +269,31 @@ function AreaSection({
         <MapPin className="h-4 w-4 text-sky-400" />
         {area.area_name}
         <span className="text-slate-600 font-normal normal-case">
-          ({onCount}/{area.entities.length} {onCount <= 1 ? 'actif' : 'actifs'})
+          ({onCount}/{controllable.length} {onCount <= 1 ? 'actif' : 'actifs'})
         </span>
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {area.entities
           .sort((a, b) => {
-            if (a.domain !== b.domain) return a.domain === 'light' ? -1 : 1;
+            // lights first, then switches, then sensors
+            const domainOrder = { light: 0, switch: 1, sensor: 2 };
+            const orderA = domainOrder[a.domain] ?? 3;
+            const orderB = domainOrder[b.domain] ?? 3;
+            if (orderA !== orderB) return orderA - orderB;
             return a.friendly_name.localeCompare(b.friendly_name, 'fr');
           })
-          .map((entity) => (
-            <EntityCard
-              key={entity.entity_id}
-              entity={entity}
-              onToggle={onToggle}
-              isPending={pendingEntityId === entity.entity_id}
-            />
-          ))}
+          .map((entity) =>
+            entity.domain === 'sensor' ? (
+              <TemperatureCard key={entity.entity_id} entity={entity} />
+            ) : (
+              <EntityCard
+                key={entity.entity_id}
+                entity={entity}
+                onToggle={onToggle}
+                isPending={pendingEntityId === entity.entity_id}
+              />
+            )
+          )}
       </div>
     </section>
   );
@@ -323,15 +415,15 @@ export default function HomeAssistantPage() {
               <StatCard
                 title="Consommation"
                 value={`${summary.totalPowerConsumption.toFixed(0)}W`}
-                subtitle="puissance totale"
+                subtitle="puissance actuelle"
                 icon={Zap}
                 color="from-orange-500 to-amber-500"
               />
               <StatCard
-                title="Taux d'activité"
-                value={`${Math.round(((summary.lightsOn + summary.switchesOn) / Math.max(summary.totalLights + summary.totalSwitches, 1)) * 100)}%`}
-                subtitle="entités allumées"
-                icon={Activity}
+                title="Énergie"
+                value={`${summary.totalMonthlyEnergy.toFixed(1)} kWh`}
+                subtitle="ce mois-ci"
+                icon={BatteryCharging}
                 color="from-emerald-500 to-teal-500"
               />
             </div>

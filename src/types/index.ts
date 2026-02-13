@@ -256,6 +256,9 @@ export interface HomeAssistantEntity {
   friendly_name: string;
   brightness?: number;
   power_consumption?: number;
+  monthly_energy?: number;
+  temperature?: number;
+  unit_of_measurement?: string;
   last_changed: string;
 }
 
@@ -273,6 +276,7 @@ export interface HomeAssistantData {
     totalSwitches: number;
     switchesOn: number;
     totalPowerConsumption: number;
+    totalMonthlyEnergy: number;
   };
 }
 
