@@ -41,20 +41,20 @@ function StatCard({
   return (
     <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/40 backdrop-blur-xl border-slate-700/50 overflow-hidden relative group">
       <div className={cn('absolute inset-0 opacity-5 bg-gradient-to-br', color)} />
-      <CardContent className="p-5 relative">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm text-slate-400 font-medium">{title}</p>
-            <p className="text-3xl font-bold text-slate-100 tracking-tight">{value}</p>
+      <CardContent className="p-3 relative">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <p className="text-xs text-slate-400 font-medium">{title}</p>
+            <p className="text-xl font-bold text-slate-100 tracking-tight">{value}</p>
             {subtitle && (
-              <p className="text-xs text-slate-500">{subtitle}</p>
+              <p className="text-[10px] text-slate-500">{subtitle}</p>
             )}
           </div>
           <div className={cn(
-            'flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br shadow-lg',
+            'flex items-center justify-center h-9 w-9 rounded-lg bg-gradient-to-br shadow-lg',
             color
           )}>
-            <Icon className="h-6 w-6 text-white" />
+            <Icon className="h-4 w-4 text-white" />
           </div>
         </div>
       </CardContent>
@@ -96,34 +96,34 @@ function TemperatureCard({ entity }: { entity: HomeAssistantEntity }) {
     <Card className={cn(
       'bg-gradient-to-br backdrop-blur-xl border transition-all duration-300',
       getTempGradient(temp),
-      'hover:shadow-xl hover:scale-[1.02]'
+      'hover:shadow-lg hover:scale-[1.01]'
     )}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <div className={cn(
-              'flex items-center justify-center h-10 w-10 rounded-lg border',
+              'flex items-center justify-center h-8 w-8 rounded-md border',
               getTempIconGradient(temp)
             )}>
-              <Thermometer className={cn('h-5 w-5', temp !== undefined ? 'text-white' : 'text-slate-500')} />
+              <Thermometer className={cn('h-4 w-4', temp !== undefined ? 'text-white' : 'text-slate-500')} />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate text-slate-100">
+              <p className="text-xs font-medium truncate text-slate-100">
                 {entity.friendly_name}
               </p>
               <Badge
                 variant="outline"
-                className="text-[10px] mt-1 border bg-slate-500/20 text-slate-400 border-slate-500/50"
+                className="text-[9px] mt-0.5 border bg-slate-500/20 text-slate-400 border-slate-500/50"
               >
                 Capteur
               </Badge>
             </div>
           </div>
           <div className="text-right">
-            <p className={cn('text-2xl font-bold font-mono', getTempColor(temp))}>
+            <p className={cn('text-lg font-bold font-mono', getTempColor(temp))}>
               {temp !== undefined ? temp.toFixed(1) : '--'}
             </p>
-            <p className="text-xs text-slate-500">{unit}</p>
+            <p className="text-[10px] text-slate-500">{unit}</p>
           </div>
         </div>
       </CardContent>
@@ -156,25 +156,25 @@ function EntityCard({
     <Card className={cn(
       'bg-gradient-to-br backdrop-blur-xl border transition-all duration-300',
       isOn ? gradientOn : gradientOff,
-      'hover:shadow-xl hover:scale-[1.02]'
+      'hover:shadow-lg hover:scale-[1.01]'
     )}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
             <div className={cn(
-              'flex items-center justify-center h-10 w-10 rounded-lg border',
+              'flex items-center justify-center h-8 w-8 rounded-md border',
               isOn
                 ? `bg-gradient-to-br ${isLight ? 'from-amber-500 to-yellow-600' : 'from-sky-500 to-teal-600'} border-transparent shadow-md`
                 : 'bg-slate-800/80 border-slate-700/50'
             )}>
               {isLight
-                ? <Lightbulb className={cn('h-5 w-5', isOn ? 'text-white' : 'text-slate-500')} />
-                : <Plug className={cn('h-5 w-5', isOn ? 'text-white' : 'text-slate-500')} />
+                ? <Lightbulb className={cn('h-4 w-4', isOn ? 'text-white' : 'text-slate-500')} />
+                : <Plug className={cn('h-4 w-4', isOn ? 'text-white' : 'text-slate-500')} />
               }
             </div>
             <div className="min-w-0">
               <p className={cn(
-                'text-sm font-medium truncate',
+                'text-xs font-medium truncate',
                 isOn ? 'text-slate-100' : 'text-slate-400'
               )}>
                 {entity.friendly_name}
@@ -182,7 +182,7 @@ function EntityCard({
               <Badge
                 variant="outline"
                 className={cn(
-                  'text-[10px] mt-1 border',
+                  'text-[9px] mt-0.5 border',
                   isOn
                     ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
                     : 'bg-slate-500/20 text-slate-400 border-slate-500/50'
@@ -197,7 +197,7 @@ function EntityCard({
             variant="ghost"
             size="sm"
             className={cn(
-              'h-9 w-9 p-0 rounded-lg',
+              'h-7 w-7 p-0 rounded-md',
               isOn
                 ? 'hover:bg-red-500/20 text-slate-300 hover:text-red-400'
                 : 'hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400'
@@ -207,39 +207,39 @@ function EntityCard({
             title={isOn ? 'Éteindre' : 'Allumer'}
           >
             {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Power className="h-4 w-4" />
+              <Power className="h-3.5 w-3.5" />
             )}
           </Button>
         </div>
 
         {/* Brightness bar (lights only) */}
         {isLight && isOn && brightnessPercent !== undefined && (
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
+          <div className="space-y-0.5">
+            <div className="flex items-center justify-between text-[10px]">
               <span className="text-slate-500 flex items-center gap-1">
-                <Sun className="h-3 w-3" />
+                <Sun className="h-2.5 w-2.5" />
                 Luminosité
               </span>
               <span className="font-mono text-slate-400">{brightnessPercent}%</span>
             </div>
-            <Progress value={brightnessPercent} className="h-1.5" />
+            <Progress value={brightnessPercent} className="h-1" />
           </div>
         )}
 
         {/* Power consumption & monthly energy */}
         {(entity.power_consumption !== undefined || entity.monthly_energy !== undefined) && (
-          <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
+          <div className="flex items-center gap-2 mt-1.5 text-[10px] text-slate-400">
             {entity.power_consumption !== undefined && entity.power_consumption > 0 && (
-              <span className="flex items-center gap-1">
-                <Zap className="h-3 w-3 text-amber-400" />
+              <span className="flex items-center gap-0.5">
+                <Zap className="h-2.5 w-2.5 text-amber-400" />
                 <span className="font-mono">{entity.power_consumption.toFixed(1)} W</span>
               </span>
             )}
             {entity.monthly_energy !== undefined && entity.monthly_energy > 0 && (
-              <span className="flex items-center gap-1">
-                <BatteryCharging className="h-3 w-3 text-emerald-400" />
+              <span className="flex items-center gap-0.5">
+                <BatteryCharging className="h-2.5 w-2.5 text-emerald-400" />
                 <span className="font-mono">{entity.monthly_energy.toFixed(1)} kWh/mois</span>
               </span>
             )}
@@ -264,15 +264,15 @@ function AreaSection({
   const onCount = controllable.filter((e) => e.state === 'on').length;
 
   return (
-    <section className="space-y-4">
-      <h2 className="text-sm font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
-        <MapPin className="h-4 w-4 text-sky-400" />
+    <section className="space-y-2">
+      <h2 className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-2">
+        <MapPin className="h-3.5 w-3.5 text-sky-400" />
         {area.area_name}
         <span className="text-slate-600 font-normal normal-case">
           ({onCount}/{controllable.length} {onCount <= 1 ? 'actif' : 'actifs'})
         </span>
       </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {area.entities
           .sort((a, b) => {
             // lights first, then switches, then sensors
@@ -302,34 +302,34 @@ function AreaSection({
 // --- Loading Skeleton ---
 function LoadingSkeleton() {
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[...Array(4)].map((_, i) => (
           <Card key={i} className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
-            <CardContent className="p-5">
-              <div className="flex justify-between">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20 bg-slate-800" />
-                  <Skeleton className="h-8 w-16 bg-slate-800" />
+            <CardContent className="p-3">
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <Skeleton className="h-3 w-16 bg-slate-800" />
+                  <Skeleton className="h-5 w-12 bg-slate-800" />
                 </div>
-                <Skeleton className="h-12 w-12 rounded-xl bg-slate-800" />
+                <Skeleton className="h-9 w-9 rounded-lg bg-slate-800" />
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
       {[...Array(3)].map((_, i) => (
-        <div key={i} className="space-y-4">
-          <Skeleton className="h-5 w-32 bg-slate-800" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(3)].map((_, j) => (
+        <div key={i} className="space-y-2">
+          <Skeleton className="h-4 w-28 bg-slate-800" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {[...Array(4)].map((_, j) => (
               <Card key={j} className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Skeleton className="h-10 w-10 rounded-lg bg-slate-800" />
-                    <div className="space-y-2 flex-1">
-                      <Skeleton className="h-4 w-24 bg-slate-800" />
-                      <Skeleton className="h-4 w-12 bg-slate-800 rounded-full" />
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-8 rounded-md bg-slate-800" />
+                    <div className="space-y-1 flex-1">
+                      <Skeleton className="h-3 w-20 bg-slate-800" />
+                      <Skeleton className="h-3 w-10 bg-slate-800 rounded-full" />
                     </div>
                   </div>
                 </CardContent>
@@ -366,29 +366,27 @@ export default function HomeAssistantPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-sky-500/10 via-teal-500/5 to-cyan-500/10" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-sky-500/20 via-transparent to-transparent" />
 
-        <div className="relative px-6 py-8">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-sky-500 to-teal-600 shadow-lg shadow-sky-500/25">
-                  <Home className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-slate-100">Home Assistant</h1>
-                  <p className="text-sm text-slate-400">Lumières & Prises connectées</p>
-                </div>
+        <div className="relative px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-sky-500 to-teal-600 shadow-lg shadow-sky-500/25">
+                <Home className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-slate-100">Home Assistant</h1>
+                <p className="text-xs text-slate-400">Lumières & Prises connectées</p>
               </div>
             </div>
             {summary && (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/60 backdrop-blur-sm border border-slate-700/50">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/60 backdrop-blur-sm border border-slate-700/50">
                 <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
-                  <span className="text-sm font-medium text-slate-300">
+                  <div className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
+                  <span className="text-xs font-medium text-slate-300">
                     {summary.lightsOn + summary.switchesOn} actifs
                   </span>
                 </div>
-                <div className="h-4 w-px bg-slate-700" />
-                <span className="text-sm text-slate-500">
+                <div className="h-3 w-px bg-slate-700" />
+                <span className="text-xs text-slate-500">
                   {summary.totalLights + summary.totalSwitches} total
                 </span>
               </div>
@@ -397,7 +395,7 @@ export default function HomeAssistantPage() {
 
           {/* Stats Cards */}
           {summary && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
               <StatCard
                 title="Lumières"
                 value={`${summary.lightsOn}/${summary.totalLights}`}
@@ -432,19 +430,19 @@ export default function HomeAssistantPage() {
       </header>
 
       {/* Content */}
-      <div className="p-6 space-y-8">
+      <div className="px-6 py-4 space-y-5">
         {isLoading && <LoadingSkeleton />}
 
         {error && (
           <Card className="bg-red-950/20 border-red-900/50">
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <div className="flex items-center gap-3 text-red-400">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-red-500/20">
-                  <Home className="h-5 w-5" />
+                <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-red-500/20">
+                  <Home className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-medium">Connexion échouée</p>
-                  <p className="text-sm text-red-400/70">
+                  <p className="text-sm font-medium">Connexion échouée</p>
+                  <p className="text-xs text-red-400/70">
                     Impossible de se connecter à Home Assistant : {error.message}
                   </p>
                 </div>
@@ -455,12 +453,12 @@ export default function HomeAssistantPage() {
 
         {data?.success && areas.length === 0 && (
           <Card className="bg-slate-900/40 backdrop-blur-xl border-slate-700/50">
-            <CardContent className="p-12 text-center">
-              <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-slate-800/50 mx-auto mb-4">
-                <Home className="h-8 w-8 text-slate-500" />
+            <CardContent className="p-8 text-center">
+              <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-slate-800/50 mx-auto mb-3">
+                <Home className="h-6 w-6 text-slate-500" />
               </div>
-              <h3 className="text-lg font-medium text-slate-300 mb-2">Aucune entité trouvée</h3>
-              <p className="text-sm text-slate-500">
+              <h3 className="text-sm font-medium text-slate-300 mb-1">Aucune entité trouvée</h3>
+              <p className="text-xs text-slate-500">
                 Aucune lumière ou prise connectée n&apos;a été trouvée dans Home Assistant.
               </p>
             </CardContent>
