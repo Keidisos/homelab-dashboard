@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Activity, Play, StopCircle, RotateCw, Power, Loader2 } from 'lucide-react';
+import { Server, Cpu, MemoryStick, Clock, Box, Monitor, Activity, Play, StopCircle, RotateCw, Power, Loader2, Thermometer } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -180,6 +180,20 @@ function formatUptime(seconds: number): string {
   return `${mins}m`;
 }
 
+function getTempColor(t: number): string {
+  if (t >= 80) return 'text-red-400';
+  if (t >= 65) return 'text-amber-400';
+  if (t >= 45) return 'text-emerald-400';
+  return 'text-blue-400';
+}
+
+function getTempLabel(t: number): { label: string; className: string } {
+  if (t >= 80) return { label: 'Critique', className: 'bg-red-500/20 text-red-400 border-red-500/50' };
+  if (t >= 65) return { label: 'Chaud', className: 'bg-amber-500/20 text-amber-400 border-amber-500/50' };
+  if (t >= 45) return { label: 'Normal', className: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' };
+  return { label: 'Frais', className: 'bg-blue-500/20 text-blue-400 border-blue-500/50' };
+}
+
 function NodeCard({ node }: { node: ProxmoxNode }) {
   const cpuPercent = node.cpu * 100;
   const memPercent = (node.mem / node.maxmem) * 100;
@@ -237,7 +251,31 @@ function NodeCard({ node }: { node: ProxmoxNode }) {
           <Progress value={memPercent} className="h-2" />
         </div>
 
-        <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-800">
+        {/* Temperature */}
+        {node.temperature !== undefined && (
+          <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-800">
+            <div className="flex items-center gap-2 text-slate-400">
+              <Thermometer className="h-4 w-4" />
+              <span>Température</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className={cn('text-[10px] border', getTempLabel(node.temperature).className)}
+              >
+                {getTempLabel(node.temperature).label}
+              </Badge>
+              <span className={cn('font-mono font-semibold', getTempColor(node.temperature))}>
+                {node.temperature.toFixed(1)}°C
+              </span>
+            </div>
+          </div>
+        )}
+
+        <div className={cn(
+          'flex items-center justify-between text-sm pt-2 border-t border-slate-800',
+          node.temperature === undefined && ''
+        )}>
           <div className="flex items-center gap-2 text-slate-400">
             <Clock className="h-4 w-4" />
             <span>Uptime</span>

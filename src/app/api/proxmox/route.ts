@@ -42,23 +42,88 @@ interface RawNode {
   uptime: number;
 }
 
+async function getNodeTemperature(nodeName: string): Promise<number | undefined> {
+  // Approach 1: Try new sensors API (PVE 8.3+)
+  try {
+    const sensors = await proxmoxFetch<Record<string, unknown>[]>(
+      `/nodes/${nodeName}/hardware/sensors/temperature/cpu`
+    );
+    if (Array.isArray(sensors) && sensors.length > 0) {
+      for (const sensor of sensors) {
+        const t = sensor.temp ?? sensor.temperature ?? sensor.input;
+        if (typeof t === 'number') return t;
+      }
+    }
+  } catch {
+    // Endpoint not available
+  }
+
+  // Approach 2: Check detailed node status for thermal data
+  try {
+    const status = await proxmoxFetch<Record<string, unknown>>(`/nodes/${nodeName}/status`);
+
+    // Check top-level keys for temperature-related data
+    for (const [key, value] of Object.entries(status)) {
+      if ((key.includes('temp') || key.includes('thermal') || key.includes('sensor')) && typeof value === 'number') {
+        return value;
+      }
+    }
+
+    // Check cpuinfo sub-object
+    const cpuinfo = status.cpuinfo as Record<string, unknown> | undefined;
+    if (cpuinfo) {
+      for (const [key, value] of Object.entries(cpuinfo)) {
+        if (key.includes('temp') && typeof value === 'number') return value;
+      }
+    }
+  } catch {
+    // Failed
+  }
+
+  // Approach 3: Try rrddata for temperature fields
+  try {
+    const rrdData = await proxmoxFetch<Record<string, unknown>[]>(
+      `/nodes/${nodeName}/rrddata?timeframe=hour&cf=AVERAGE`
+    );
+    if (Array.isArray(rrdData) && rrdData.length > 0) {
+      // Get most recent data point
+      const latest = rrdData[rrdData.length - 1];
+      for (const [key, value] of Object.entries(latest)) {
+        if (key.includes('temp') && typeof value === 'number') return value;
+      }
+    }
+  } catch {
+    // No temperature data available
+  }
+
+  return undefined;
+}
+
 async function getNodes(): Promise<{ nodes: ProxmoxNode[]; nodeNames: string[] }> {
   const rawNodes = await proxmoxFetch<RawNode[]>('/nodes');
 
-  const nodes = rawNodes.map((node) => ({
-    node: node.node,
-    status: node.status === 'online' ? 'online' as const : 'offline' as const,
-    cpu: node.cpu,
-    maxcpu: node.maxcpu,
-    mem: node.mem,
-    maxmem: node.maxmem,
-    uptime: node.uptime,
-  }));
+  const nodesWithTemp = await Promise.all(
+    rawNodes.map(async (node) => {
+      const temperature = node.status === 'online'
+        ? await getNodeTemperature(node.node)
+        : undefined;
 
-  // Extract node names for VM queries
+      return {
+        node: node.node,
+        status: node.status === 'online' ? 'online' as const : 'offline' as const,
+        cpu: node.cpu,
+        maxcpu: node.maxcpu,
+        mem: node.mem,
+        maxmem: node.maxmem,
+        uptime: node.uptime,
+        temperature,
+      };
+    })
+  );
+
   const nodeNames = rawNodes.map((n) => n.node);
 
-  return { nodes, nodeNames };
+  return { nodes: nodesWithTemp, nodeNames };
 }
 
 async function getVMsForNode(nodeName: string): Promise<ProxmoxVM[]> {

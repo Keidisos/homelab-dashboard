@@ -37,6 +37,7 @@ export interface ProxmoxNode {
   disk?: number;
   maxdisk?: number;
   uptime: number;
+  temperature?: number;
 }
 
 export interface ProxmoxVM {
