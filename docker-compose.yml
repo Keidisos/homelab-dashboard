@@ -8,8 +8,6 @@ services:
     volumes:
       # Persist settings data
       - dashboard-data:/app/data
-      # Host thermal sensors (read-only) for CPU temperature
-      - /sys/class/thermal:/host-thermal:ro
     environment:
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET}
@@ -58,9 +56,6 @@ services:
       # Home Assistant
       - HOMEASSISTANT_HOST=${HOMEASSISTANT_HOST}
       - HOMEASSISTANT_TOKEN=${HOMEASSISTANT_TOKEN}
-
-      # Proxmox temperature via HA sensor (optional, e.g. sensor.proxmox_cpu_temperature)
-      - PROXMOX_TEMP_HA_ENTITY=${PROXMOX_TEMP_HA_ENTITY:-}
     networks:
       - homelab
 
