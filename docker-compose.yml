@@ -8,6 +8,8 @@ services:
     volumes:
       # Persist settings data
       - dashboard-data:/app/data
+      # Host thermal sensors (read-only) for CPU temperature
+      - /sys/class/thermal:/host-thermal:ro
     environment:
       # Authentication
       - AUTH_SECRET=${AUTH_SECRET}

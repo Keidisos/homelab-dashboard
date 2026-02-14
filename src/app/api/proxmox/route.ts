@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { readFileSync, readdirSync } from 'fs';
 import type { ProxmoxNode, ProxmoxVM, ApiResponse, ProxmoxData } from '@/types';
 import { fetchInsecure, parseApiError } from '@/lib/fetch-ssl';
 import { recordMetric } from '@/lib/metrics-db';
@@ -114,6 +115,21 @@ async function getNodeTemperature(nodeName: string): Promise<number | undefined>
     }
   } catch {
     // No temperature data available
+  }
+
+  // Approach 4: Read host thermal zone files (Docker volume mount /host-thermal)
+  try {
+    const thermalDir = '/host-thermal';
+    const zones = readdirSync(thermalDir).filter(d => d.startsWith('thermal_zone'));
+    for (const zone of zones) {
+      const raw = readFileSync(`${thermalDir}/${zone}/temp`, 'utf-8').trim();
+      const millidegrees = parseInt(raw, 10);
+      if (!isNaN(millidegrees) && millidegrees > 0) {
+        return millidegrees / 1000; // Convert millidegrees to °C
+      }
+    }
+  } catch {
+    // /host-thermal not mounted or not available
   }
 
   return undefined;
