@@ -132,6 +132,27 @@ async function getNodeTemperature(nodeName: string): Promise<number | undefined>
     // /host-thermal not mounted or not available
   }
 
+  // Approach 5: Fetch from Home Assistant sensor (set PROXMOX_TEMP_HA_ENTITY)
+  try {
+    const entityId = process.env.PROXMOX_TEMP_HA_ENTITY;
+    const haHost = process.env.HOMEASSISTANT_HOST;
+    const haToken = process.env.HOMEASSISTANT_TOKEN;
+
+    if (entityId && haHost && haToken) {
+      const res = await fetchInsecure(`${haHost}/api/states/${entityId}`, {
+        headers: { Authorization: `Bearer ${haToken}` },
+        timeout: 5000,
+      });
+      if (res.ok) {
+        const state = await res.json() as { state: string };
+        const temp = parseFloat(state.state);
+        if (!isNaN(temp) && temp > 0 && temp < 150) return temp;
+      }
+    }
+  } catch {
+    // Home Assistant not available
+  }
+
   return undefined;
 }
 
