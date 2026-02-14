@@ -42,6 +42,29 @@ interface RawNode {
   uptime: number;
 }
 
+// Parse raw `sensors` command output (from ProxMenux thermalstate patch)
+// Looks for "Package id 0: +48.0°C" (Intel) or "Tctl: +48.0°C" (AMD)
+function parseSensorsOutput(raw: string): number | undefined {
+  // Priority patterns: Package temp (Intel), Tctl (AMD), then any Core temp
+  const patterns = [
+    /Package\s+id\s+\d+:\s*\+?([\d.]+)\s*°C/i,
+    /Tctl:\s*\+?([\d.]+)\s*°C/i,
+    /Tdie:\s*\+?([\d.]+)\s*°C/i,
+    /Core\s+\d+:\s*\+?([\d.]+)\s*°C/i,
+    /temp\d+_input:\s*([\d.]+)/i,
+    /\+?([\d.]+)\s*°C/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = raw.match(pattern);
+    if (match) {
+      const temp = parseFloat(match[1]);
+      if (!isNaN(temp) && temp > 0 && temp < 150) return temp;
+    }
+  }
+  return undefined;
+}
+
 async function getNodeTemperature(nodeName: string): Promise<number | undefined> {
   // Approach 1: Try new sensors API (PVE 8.3+)
   try {
@@ -58,22 +81,20 @@ async function getNodeTemperature(nodeName: string): Promise<number | undefined>
     // Endpoint not available
   }
 
-  // Approach 2: Check detailed node status for thermal data
+  // Approach 2: Check detailed node status (ProxMenux adds thermalstate as string)
   try {
     const status = await proxmoxFetch<Record<string, unknown>>(`/nodes/${nodeName}/status`);
 
-    // Check top-level keys for temperature-related data
+    // ProxMenux patch: thermalstate contains raw `sensors` command output
+    if (typeof status.thermalstate === 'string' && status.thermalstate.length > 0) {
+      const temp = parseSensorsOutput(status.thermalstate);
+      if (temp !== undefined) return temp;
+    }
+
+    // Check for numeric temperature fields
     for (const [key, value] of Object.entries(status)) {
       if ((key.includes('temp') || key.includes('thermal') || key.includes('sensor')) && typeof value === 'number') {
         return value;
-      }
-    }
-
-    // Check cpuinfo sub-object
-    const cpuinfo = status.cpuinfo as Record<string, unknown> | undefined;
-    if (cpuinfo) {
-      for (const [key, value] of Object.entries(cpuinfo)) {
-        if (key.includes('temp') && typeof value === 'number') return value;
       }
     }
   } catch {
@@ -86,7 +107,6 @@ async function getNodeTemperature(nodeName: string): Promise<number | undefined>
       `/nodes/${nodeName}/rrddata?timeframe=hour&cf=AVERAGE`
     );
     if (Array.isArray(rrdData) && rrdData.length > 0) {
-      // Get most recent data point
       const latest = rrdData[rrdData.length - 1];
       for (const [key, value] of Object.entries(latest)) {
         if (key.includes('temp') && typeof value === 'number') return value;
