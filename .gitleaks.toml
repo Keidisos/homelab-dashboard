@@ -1,0 +1,16 @@
+title = "Gitleaks development"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "token-test"
+regex = '''token-[a-z0-9_-]+'''
+keywords = ["token"]
+tags = ["test"]
+
+[allowlist]
+description = "Test d'allowlist"
+regexes = [
+    '''A_KEY=xxx-abc'''
+]
