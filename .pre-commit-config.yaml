@@ -3,4 +3,7 @@ repos:
     rev: v8.18.2
     hooks:
       - id: gitleaks
-        args: ["protect", "--staged", "--config=.gitleaks.toml", "--verbose"]
+        name: Gitleaks
+        entry: gitleaks protect --staged --config .gitleaks.toml --verbose
+        language: system
+        pass_filenames: false

@@ -5,4 +5,4 @@ A_KEY=xxx-abc
 
 azerty
 FOO=bar
-FOO=bar
+aze
