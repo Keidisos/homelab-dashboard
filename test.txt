@@ -1,8 +1,0 @@
-MISTRAL_API_KEY=ryCbyvGqX7Pyvsr8L31B9Fs4cu0pdAyS
-KEY=token-toto
-
-A_KEY=xxx-abc
-
-azerty
-FOO=bar
-aze

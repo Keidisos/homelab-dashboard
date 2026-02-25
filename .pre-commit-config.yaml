@@ -4,6 +4,6 @@ repos:
     hooks:
       - id: gitleaks
         name: Gitleaks
-        entry: gitleaks protect --staged --config .gitleaks.toml --verbose
+        entry: gitleaks detect --no-git --config .gitleaks.toml --verbose
         language: system
         pass_filenames: false
